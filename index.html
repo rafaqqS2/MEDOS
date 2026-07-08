@@ -1,0 +1,2283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FAF7FD">
+<title>MedOS — Plan 90 días</title>
+
+<!-- Soporte PWA y Apple standalone -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MedOS">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
+<link rel="manifest" href='data:application/manifest+json,{"name":"MedOS","short_name":"MedOS","start_url":".","display":"standalone","background_color":"%2312111A","theme_color":"%238F7FE6","orientation":"portrait","icons":[{"src":"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%239885EE%22/><text y=%22.75em%22 x=%22.1em%22 font-size=%2270%22>🩺</text></svg>","sizes":"512x512","type":"image/svg+xml"}]}' />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ─────────────────────────────────────────────────────────────── */
+:root {
+  --bg:        #FAF7FD;
+  --s1:        #FFFFFF;
+  --s2:        #F5F0FA;
+  --s3:        #ECE3F5;
+  --border:    #E8DFF2;
+  --border2:   #DCCFEC;
+
+  --text:      #3E3757;
+  --text2:     #948BAE;
+  --text3:     #B9B0CE;
+
+  --accent:    #B4A2F5;
+  --accent2:   #9885EE;
+  --accent-dim:#B4A2F522;
+  --accent-glow: 0 6px 20px #B4A2F540;
+
+  --green:     #8FDBB6;
+  --green-dim: #8FDBB630;
+  --yellow:    #F7CE8A;
+  --yellow-dim:#F7CE8A30;
+  --red:       #F5A7AE;
+  --red-dim:   #F5A7AE30;
+  --blue:      #A3D4F2;
+  --blue-dim:  #A3D4F230;
+
+  /* variantes más oscuras, solo para texto legible sobre fondos pastel */
+  --green-ink: #4FA97D;
+  --yellow-ink:#C98A2E;
+  --red-ink:   #D9707E;
+  --blue-ink:  #4E9BC7;
+
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 28px;
+
+  --nav-h: 68px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --trans: 180ms cubic-bezier(.4,0,.2,1);
+}
+
+body.dark-mode {
+  --bg:        #0E0B16;
+  --s1:        #181424;
+  --s2:        #231F35;
+  --s3:        #312B47;
+  --border:    #2F2944;
+  --border2:   #443B60;
+
+  --text:      #E4DFEC;
+  --text2:     #A59EB9;
+  --text3:     #7E7696;
+
+  --accent:    #9885EE;
+  --accent2:   #B4A2F5;
+  --accent-dim:#9885EE33;
+  --accent-glow: 0 6px 20px #9885EE40;
+
+  --green:     #4FA97D;
+  --green-dim: #4FA97D25;
+  --yellow:    #C98A2E;
+  --yellow-dim:#C98A2E25;
+  --red:       #D9707E;
+  --red-dim:   #D9707E25;
+  --blue:      #4E9BC7;
+  --blue-dim:  #4E9BC725;
+
+  --green-ink: #8FDBB6;
+  --yellow-ink:#F7CE8A;
+  --red-ink:   #F5A7AE;
+  --blue-ink:  #A3D4F2;
+}
+
+/* ── MODO GUARDIA SWITCH ────────────────────────────────────────────────── */
+.theme-toggle-btn {
+  position: absolute; top: 16px; right: 16px; z-index: 150;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--s1); border: 1px solid var(--border);
+  color: var(--text); font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--trans);
+  box-shadow: 0 2px 8px rgba(152, 133, 238, 0.15);
+}
+.theme-toggle-btn:active { transform: scale(0.9); }
+
+/* ── ECG DYNAMIC STROKE ─────────────────────────────────────────────────── */
+.ecg-path {
+  stroke: var(--accent) !important;
+  opacity: 0.8;
+}
+
+/* ── DIMMED FLOW FOR INICIO ─────────────────────────────────────────────── */
+.dimmed-flow {
+  opacity: 0.3;
+  filter: grayscale(0.5);
+  transition: opacity var(--trans), filter var(--trans);
+}
+.dimmed-flow:hover, .dimmed-flow:focus-within {
+  opacity: 1;
+  filter: none;
+}
+
+/* ── GIANT PLAY BUTTON ──────────────────────────────────────────────────── */
+.play-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 18px 0;
+}
+.play-btn-giant {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 25px rgba(152, 133, 238, 0.45);
+  transition: all var(--trans);
+  border: none;
+  cursor: pointer;
+  outline: none;
+}
+.play-btn-giant:active {
+  transform: scale(0.93);
+  box-shadow: 0 4px 12px rgba(152, 133, 238, 0.3);
+}
+.play-btn-giant span.play-icon {
+  font-size: 32px;
+  margin-left: 6px;
+  line-height: 1;
+}
+.play-btn-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+/* ── DYNAMIC STREAK (RACHA VIVA) ───────────────────────────────────────── */
+.streak-active {
+  color: #FF5A19 !important;
+  text-shadow: 0 0 10px rgba(255, 90, 25, 0.6), 0 0 20px rgba(152, 133, 238, 0.4);
+  animation: racha-glow 1.5s ease-in-out infinite alternate;
+  font-weight: 800;
+}
+.streak-pending {
+  color: var(--text3) !important;
+  opacity: 0.5;
+  animation: racha-pulse 2s infinite;
+}
+@keyframes racha-glow {
+  from { text-shadow: 0 0 6px rgba(255, 90, 25, 0.4), 0 0 12px rgba(152, 133, 238, 0.3); }
+  to { text-shadow: 0 0 14px rgba(255, 90, 25, 0.8), 0 0 24px rgba(152, 133, 238, 0.6); }
+}
+@keyframes racha-pulse {
+  0% { opacity: 0.35; }
+  50% { opacity: 0.75; }
+  100% { opacity: 0.35; }
+}
+
+/* ── LOGROS (MEDALLAS) ──────────────────────────────────────────────────── */
+.medals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.medal-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 6px;
+  text-align: center;
+  transition: all var(--trans);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.medal-card.locked {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+.medal-icon {
+  font-size: 26px;
+}
+.medal-name {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.medal-desc {
+  font-size: 8px;
+  color: var(--text3);
+  line-height: 1.1;
+}
+
+/* ── VISOR MODAL NO ENTENDI ─────────────────────────────────────────────── */
+.ne-modal {
+  position: fixed; inset: 0; background: rgba(14, 11, 22, 0.65);
+  backdrop-filter: blur(8px); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity var(--trans);
+  padding: 16px;
+}
+.ne-modal.open {
+  opacity: 1; pointer-events: auto;
+}
+.ne-modal-content {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r-lg); width: 100%; max-width: 480px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+  display: flex; flex-direction: column; max-height: 85vh;
+  transform: scale(0.95); transition: transform var(--trans);
+}
+.ne-modal.open .ne-modal-content {
+  transform: scale(1);
+}
+.ne-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px; border-bottom: 1px solid var(--border);
+}
+.ne-modal-title-row {
+  display: flex; align-items: center; gap: 8px;
+}
+#ne-modal-icon { font-size: 20px; }
+#ne-modal-title { font-size: 15px; font-weight: 800; color: var(--text); }
+.ne-modal-close {
+  background: none; border: none; font-size: 24px; color: var(--text3);
+  cursor: pointer; transition: color var(--trans);
+}
+.ne-modal-close:hover { color: var(--text); }
+.ne-modal-body {
+  padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+}
+.ne-modal-desc {
+  font-size: 12px; color: var(--text2); line-height: 1.5;
+}
+.ne-prompt-box {
+  background: var(--s2); border: 1px solid var(--border2);
+  border-radius: var(--r-sm); padding: 12px; max-height: 120px;
+  overflow-y: auto;
+}
+.ne-prompt-box pre {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  white-space: pre-wrap; word-break: break-word; color: var(--text);
+}
+.ne-actions-row {
+  display: flex; gap: 8px;
+}
+.ne-actions-row .btn {
+  flex: 1; padding: 12px; font-size: 13px;
+}
+.ne-notes-integration {
+  border-top: 1px dashed var(--border2);
+  padding-top: 12px;
+}
+
+/* ── BITACORA DE INSIGHTS ───────────────────────────────────────────────── */
+.bitacora-item {
+  background: var(--s2);
+  border-radius: var(--r-sm);
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+/* ── RESET ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+button { font-family: inherit; border: none; cursor: pointer; }
+input, textarea, select { font-family: inherit; }
+::-webkit-scrollbar { display: none; }
+
+/* ── LAYOUT ─────────────────────────────────────────────────────────────── */
+#app { display: flex; flex-direction: column; height: 100%; position: relative; }
+
+.screen {
+  display: none; flex: 1; overflow-y: auto; padding: 16px 16px calc(var(--nav-h) + var(--safe-b) + 16px);
+}
+.screen.active { display: block; }
+
+/* ── BOTTOM NAV ─────────────────────────────────────────────────────────── */
+#nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: calc(var(--nav-h) + var(--safe-b));
+  padding-bottom: var(--safe-b);
+  background: var(--s1);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: flex-start;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; height: var(--nav-h); padding-top: 8px;
+  color: var(--text3); transition: color var(--trans); background: none;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
+  position: relative;
+}
+.nav-btn.active { color: var(--accent2); }
+.nav-btn .icon { font-size: 22px; transition: transform var(--trans); }
+.nav-btn.active .icon { transform: translateY(-1px); }
+.nav-btn::after {
+  content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+  width: 0; height: 2px; background: var(--accent); border-radius: 99px;
+  transition: width var(--trans);
+}
+.nav-btn.active::after { width: 28px; }
+
+/* ── SHARED COMPONENTS ──────────────────────────────────────────────────── */
+.page-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.page-title {
+  font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+}
+.page-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--s1); border: 1px solid var(--border);
+  color: var(--text2); font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--trans);
+}
+.icon-btn:active { transform: scale(0.92); background: var(--s2); }
+
+.card {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 14px #B4A2F51A;
+}
+.card-sm { padding: 12px 14px; border-radius: var(--r-md); }
+
+.tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600;
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 20px; border-radius: var(--r-md);
+  font-size: 15px; font-weight: 600; transition: all var(--trans);
+  width: 100%; cursor: pointer;
+}
+.btn-primary {
+  background: var(--accent); color: white;
+  box-shadow: var(--accent-glow);
+}
+.btn-primary:active { transform: scale(0.97); opacity: 0.9; }
+.btn-secondary {
+  background: var(--s2); color: var(--text); border: 1px solid var(--border2);
+}
+.btn-secondary:active { transform: scale(0.97); }
+.btn-ghost { background: none; color: var(--text2); font-size: 13px; padding: 8px 12px; width: auto; }
+
+.pill {
+  padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 600;
+  background: var(--s2); color: var(--text2); border: 1px solid var(--border);
+  cursor: pointer; transition: all var(--trans); white-space: nowrap;
+}
+.pill.active { background: var(--accent-dim); color: var(--accent2); border-color: #B4A2F555; }
+
+.field-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text3); margin-bottom: 6px; }
+.field-input, .field-select, .field-textarea {
+  width: 100%; background: var(--s2); border: 1px solid var(--border2);
+  color: var(--text); border-radius: var(--r-sm); padding: 10px 12px;
+  font-size: 13px; outline: none;
+}
+.field-textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+.field-row { display: flex; gap: 8px; }
+.field-row > div { flex: 1; }
+.field-group { margin-bottom: 10px; }
+
+/* ── TOAST ──────────────────────────────────────────────────────────────── */
+#toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-80px);
+  background: var(--s2); border: 1px solid var(--border2); color: var(--text);
+  padding: 10px 18px; border-radius: 99px; font-size: 13px; font-weight: 600;
+  z-index: 999; transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+  white-space: nowrap; box-shadow: 0 8px 28px #B4A2F540;
+  max-width: 88vw; overflow: hidden; text-overflow: ellipsis;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCREEN 1 — INICIO
+═══════════════════════════════════════════════════════════════════════════ */
+.inicio-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.inicio-logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+.inicio-logo span { color: var(--accent); }
+.inicio-day-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 500; color: var(--text2);
+  background: var(--s2); padding: 5px 12px; border-radius: 99px;
+  border: 1px solid var(--border);
+}
+
+/* ECG signature line */
+.ecg-line {
+  width: 100%; height: 36px; margin: 4px 0 20px;
+  overflow: hidden; position: relative;
+}
+.ecg-line svg { position: absolute; top: 0; left: 0; }
+.ecg-path {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: ecg-draw 2s ease forwards 0.3s;
+}
+@keyframes ecg-draw { to { stroke-dashoffset: 0; } }
+
+/* Hero card */
+.hero-card {
+  background: linear-gradient(135deg, #F3ECFB 0%, #FFFFFF 100%);
+  border: 1px solid #DCCBF2;
+  border-radius: var(--r-xl); padding: 22px 20px 20px;
+  margin-bottom: 12px; position: relative; overflow: hidden;
+}
+.hero-card::before {
+  content: ''; position: absolute; top: -40px; right: -40px;
+  width: 160px; height: 160px; border-radius: 50%;
+  background: radial-gradient(circle, #D9C6F550 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-specialty {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--accent2); margin-bottom: 8px;
+}
+.hero-tema { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; line-height: 1.2; margin-bottom: 6px; }
+.hero-why {
+  font-size: 12.5px; color: var(--text2); line-height: 1.6; margin-bottom: 16px;
+}
+.hero-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.hero-meta .tag { background: var(--s2); color: var(--text2); border: 1px solid var(--border); }
+
+.inicio-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.stat-card {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 12px 10px; text-align: center;
+}
+.stat-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 500; color: var(--accent2); line-height: 1;
+}
+.stat-label { font-size: 10px; color: var(--text3); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Progreso diario */
+.daily-progress {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 16px; margin-bottom: 10px;
+}
+.dp-label { font-size: 12px; color: var(--text2); margin-bottom: 10px; font-weight: 500; }
+.dp-bar-wrap { height: 6px; background: var(--s3); border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
+.dp-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; transition: width 0.5s ease; }
+.dp-steps { display: flex; justify-content: space-between; }
+.dp-step { font-size: 10px; color: var(--text3); font-weight: 600; }
+.dp-step.done { color: var(--green-ink); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCREEN 2 — MI PLAN
+═══════════════════════════════════════════════════════════════════════════ */
+.plan-filters { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; }
+.plan-filters::-webkit-scrollbar { display: none; }
+
+.spec-section { margin-bottom: 16px; }
+.spec-header {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r-md); margin-bottom: 6px; cursor: pointer;
+}
+.spec-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.spec-name { font-size: 14px; font-weight: 700; flex: 1; }
+.spec-count { font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+.spec-chevron { color: var(--text3); transition: transform var(--trans); font-size: 12px; }
+.spec-section.open .spec-chevron { transform: rotate(90deg); }
+
+.tema-item {
+  display: flex; align-items: center; gap: 12px; padding: 13px 14px;
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r-md); margin-bottom: 4px; cursor: pointer;
+  transition: all var(--trans); margin-left: 8px;
+  box-shadow: 0 1px 8px #B4A2F512;
+}
+.tema-item:active { background: var(--s2); }
+.tema-item.dominado { opacity: 0.5; }
+.tema-estado-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  border: 1.5px solid var(--border2);
+}
+.tema-estado-dot.no_iniciado { background: transparent; }
+.tema-estado-dot.en_progreso { background: var(--yellow); border-color: var(--yellow); }
+.tema-estado-dot.dominado { background: var(--green); border-color: var(--green); }
+
+.tema-info { flex: 1; min-width: 0; }
+.tema-nombre { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tema-meta { display: flex; gap: 6px; align-items: center; margin-top: 3px; flex-wrap: wrap; }
+.tema-dif { font-size: 11px; color: var(--yellow-ink); letter-spacing: 1px; }
+.tema-prio { font-size: 10px; color: var(--text3); }
+.tema-time { font-size: 10px; color: var(--text3); }
+.tema-chevron { color: var(--text3); font-size: 12px; }
+
+.spec-section.open .tema-item { display: flex; }
+.spec-section:not(.open) .tema-item { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCREEN 3 — TEMA ACTUAL (MEDIC)
+═══════════════════════════════════════════════════════════════════════════ */
+.medic-header { margin-bottom: 20px; }
+.medic-spec { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.medic-titulo { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; line-height: 1.25; margin-bottom: 10px; }
+.medic-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.medic-steps { display: flex; flex-direction: column; gap: 8px; }
+.medic-step {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r-lg); overflow: hidden;
+  transition: border-color var(--trans);
+  box-shadow: 0 2px 12px #B4A2F516;
+}
+.medic-step.done { border-color: #8FDBB660; }
+.medic-step-header {
+  display: flex; align-items: center; gap: 14px; padding: 16px;
+  cursor: pointer;
+}
+.medic-check {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid var(--border2); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--trans); font-size: 14px; cursor: pointer;
+}
+.medic-step.done .medic-check {
+  background: var(--green); border-color: var(--green); color: #2E5943;
+}
+.medic-step-icon { font-size: 18px; }
+.medic-step-info { flex: 1; }
+.medic-step-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text2); }
+.medic-step-title { font-size: 14px; font-weight: 600; margin-top: 1px; }
+.medic-step-chevron { color: var(--text3); transition: transform var(--trans); font-size: 13px; }
+.medic-step.open .medic-step-chevron { transform: rotate(90deg); }
+.medic-step-body {
+  display: none; padding: 0 16px 16px 56px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.medic-step.open .medic-step-body { display: block; }
+.medic-step-body p { font-size: 13px; color: var(--text2); line-height: 1.75; }
+.medic-step-body strong { color: var(--text); }
+.medic-step-body ul { margin: 8px 0 0 16px; display: flex; flex-direction: column; gap: 4px; }
+.medic-step-body li { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+.medic-progress-strip {
+  display: flex; gap: 4px; margin-bottom: 16px;
+}
+.medic-seg { flex: 1; height: 4px; border-radius: 99px; background: var(--s3); transition: background 0.3s; }
+.medic-seg.done { background: var(--green); }
+
+.medic-finish-btn {
+  margin-top: 12px;
+  background: linear-gradient(135deg, var(--green), #6FCB9C);
+  color: #2E5943; font-weight: 700; border-radius: var(--r-md);
+  padding: 16px; width: 100%; font-size: 15px; display: flex;
+  align-items: center; justify-content: center; gap: 8px;
+  transition: all var(--trans); opacity: 0.4; pointer-events: none;
+}
+.medic-finish-btn.enabled { opacity: 1; pointer-events: auto; }
+.medic-finish-btn.enabled:active { transform: scale(0.97); }
+
+.section-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--text3); margin: 18px 0 8px;
+}
+
+.no-entendi-btn {
+  width: 100%; padding: 13px; border-radius: var(--r-md);
+  background: var(--red-dim); border: 1px solid #F0A7AE70;
+  color: var(--red-ink); font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 10px; transition: all var(--trans);
+}
+.no-entendi-btn:active { transform: scale(0.97); }
+.ne-options { display: none; flex-direction: column; gap: 6px; margin-top: 8px; }
+.ne-options.open { display: flex; }
+.ne-option {
+  padding: 12px 14px; background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r-md); font-size: 13px; font-weight: 600; color: var(--text);
+  display: flex; align-items: center; gap: 10px; transition: all var(--trans);
+}
+.ne-option:active { background: var(--accent-dim); border-color: #B4A2F555; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCREEN 4 — PROMPTS
+═══════════════════════════════════════════════════════════════════════════ */
+.prompt-card {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 16px; margin-bottom: 10px;
+}
+.prompt-card-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--text3); margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.prompt-card-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.prompt-card-preview { font-size: 12.5px; color: var(--text2); line-height: 1.6; margin-bottom: 14px; }
+.prompt-copy-btn {
+  width: 100%; padding: 13px; border-radius: var(--r-md);
+  background: var(--s2); border: 1px solid var(--border2);
+  color: var(--text); font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer; transition: all var(--trans);
+}
+.prompt-copy-btn:active { transform: scale(0.97); background: var(--accent-dim); border-color: #B4A2F555; color: var(--accent2); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCREEN 5 — PROGRESO
+═══════════════════════════════════════════════════════════════════════════ */
+.progress-big-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.progress-big-card {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 16px; text-align: center;
+}
+.progress-big-num { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 500; color: var(--accent2); }
+.progress-big-label { font-size: 11px; color: var(--text3); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.spec-strength-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--s1); border: 1px solid var(--border); border-radius: var(--r-md); margin-bottom: 8px; }
+.spec-strength-icon { font-size: 20px; }
+.spec-strength-text { flex: 1; }
+.spec-strength-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+.spec-strength-name { font-size: 14px; font-weight: 700; margin-top: 2px; }
+.spec-strength-pct { font-family: 'JetBrains Mono', monospace; font-size: 15px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONFIGURACIÓN DEL TEMARIO
+═══════════════════════════════════════════════════════════════════════════ */
+.config-back { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.config-back .icon-btn { }
+.config-tema-row {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 8px;
+}
+.config-tema-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.config-tema-top .spec-dot { flex-shrink: 0; }
+.config-tema-top strong { font-size: 13px; flex: 1; }
+.switch { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch-track { position: absolute; inset: 0; background: var(--s3); border-radius: 99px; transition: background var(--trans); cursor: pointer; }
+.switch input:checked + .switch-track { background: var(--accent); }
+.switch-thumb { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--text); transition: transform var(--trans); pointer-events: none; }
+.switch input:checked ~ .switch-thumb { transform: translateX(18px); }
+.config-tema-fields { display: none; gap: 8px; flex-wrap: wrap; }
+.config-tema-row.expanded .config-tema-fields { display: flex; }
+.config-tema-fields > div { flex: 1; min-width: 90px; }
+.config-add-card { border: 1px dashed var(--border2); background: transparent; }
+.config-delete-btn { color: var(--red-ink); font-size: 12px; font-weight: 700; padding: 8px; }
+
+/* ── ADAPTABILIDAD HÍBRIDA ESCRITORIO (MAX-WIDTH 480PX) ───────────────────── */
+@media (min-width: 769px) {
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, var(--s2) 0%, var(--bg) 100%);
+    min-height: 100vh;
+  }
+  #app {
+    width: 100%;
+    max-width: 480px;
+    height: 92vh;
+    max-height: 850px;
+    border-radius: 28px;
+    border: 1px solid var(--border2);
+    box-shadow: 0 16px 48px rgba(152, 133, 238, 0.15);
+    overflow: hidden;
+    position: relative;
+    margin: auto;
+  }
+  #nav {
+    position: absolute !important;
+  }
+  #toast {
+    position: absolute !important;
+  }
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <button class="theme-toggle-btn" id="theme-toggle" onclick="toggleDarkMode()" title="Modo Guardia">🌙</button>
+
+  <!-- SCREENS -->
+  <div id="s-inicio" class="screen active"></div>
+  <div id="s-plan" class="screen"></div>
+  <div id="s-tema" class="screen"></div>
+  <div id="s-prompts" class="screen"></div>
+  <div id="s-progreso" class="screen"></div>
+  <div id="s-config" class="screen"></div>
+
+  <!-- BOTTOM NAV -->
+  <nav id="nav">
+    <button class="nav-btn active" data-screen="inicio" onclick="goTo('inicio')">
+      <span class="icon">⌂</span>Inicio
+    </button>
+    <button class="nav-btn" data-screen="plan" onclick="goTo('plan')">
+      <span class="icon">◫</span>Mi Plan
+    </button>
+    <button class="nav-btn" data-screen="tema" onclick="goTo('tema')">
+      <span class="icon">◈</span>Tema
+    </button>
+    <button class="nav-btn" data-screen="prompts" onclick="goTo('prompts')">
+      <span class="icon">◎</span>Prompts
+    </button>
+    <button class="nav-btn" data-screen="progreso" onclick="goTo('progreso')">
+      <span class="icon">◉</span>Progreso
+    </button>
+  </nav>
+
+  <div id="toast">✓ Prompt copiado</div>
+</div>
+
+<!-- Canvas Confeti Celebración -->
+<canvas id="confetti-canvas" style="position:fixed; inset:0; pointer-events:none; z-index:9999; width:100%; height:100%; display:none;"></canvas>
+
+<!-- Visor Modal "No entendí" -->
+<div id="ne-modal" class="ne-modal" onclick="if(event.target===this) closeNeModal()">
+  <div class="ne-modal-content">
+    <div class="ne-modal-header">
+      <div class="ne-modal-title-row">
+        <span id="ne-modal-icon">🧬</span>
+        <h3 id="ne-modal-title">Reabordaje del Tema</h3>
+      </div>
+      <button class="ne-modal-close" onclick="closeNeModal()">×</button>
+    </div>
+    <div class="ne-modal-body">
+      <p class="ne-modal-desc">Prompt optimizado listo para abrir directamente en Gemini:</p>
+      <div class="ne-prompt-box">
+        <pre id="ne-prompt-text"></pre>
+      </div>
+      <div class="ne-actions-row">
+        <button class="btn btn-primary" id="ne-gemini-btn" onclick="abrirGeminiDirecto()">
+          🚀 Gemini Directo
+        </button>
+        <button class="btn btn-secondary" id="ne-copy-btn" onclick="copiarPromptModal()">
+          📋 Copiar Prompt
+        </button>
+      </div>
+      <div class="ne-notes-integration">
+        <h4 class="field-label" style="margin-top: 10px;">Guarda la explicación de la IA:</h4>
+        <textarea class="field-textarea" id="ne-gemini-response" placeholder="Pega aquí la respuesta de Gemini para guardarla en tus notas..."></textarea>
+        <button class="btn btn-secondary" style="margin-top: 8px; font-size:12px; padding: 10px; width: 100%;" onclick="guardarExplicacionEnNotas()">
+          💾 Integrar a Notas Personales
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// DATOS BASE — TEMARIO DE MEDICINA INTERNA
+// ═══════════════════════════════════════════════════════════════════════════
+
+const ESPECIALIDADES = [
+  { id: 'cardio',   name: 'Cardiología',         color: '#F5A9B8', emoji: '🫀' },
+  { id: 'neumo',    name: 'Neumología',           color: '#A8D8F0', emoji: '🫁' },
+  { id: 'nefro',    name: 'Nefrología',           color: '#B8A9F0', emoji: '💧' },
+  { id: 'gastro',   name: 'Gastroenterología',    color: '#D8B4E2', emoji: '🫄' },
+  { id: 'endo',     name: 'Endocrinología',       color: '#F5D397', emoji: '⚗️' },
+  { id: 'hemato',   name: 'Hematología',          color: '#F5B89C', emoji: '🩸' },
+  { id: 'infecto',  name: 'Infectología',         color: '#A0DFC0', emoji: '🦠' },
+  { id: 'neuro',    name: 'Neurología',           color: '#9FD9E0', emoji: '🧠' },
+  { id: 'reuma',    name: 'Reumatología',         color: '#E8AEDD', emoji: '🦴' },
+  { id: 'farm',     name: 'Farmacología Clínica', color: '#D7E29B', emoji: '💊' },
+];
+
+// dif: dificultad 1-5 | prio: A=alta/B=media/C=baja | deps: dependencias conceptuales
+const TEMAS = [
+  // CARDIOLOGÍA
+  { id:'c01', spec:'cardio', nombre:'Fisiología cardíaca y hemodinámica', dif:2, prio:'A', deps:[], unlock:['c02','c03','c04','c05','c06','n01','nf01'] },
+  { id:'c02', spec:'cardio', nombre:'Insuficiencia cardíaca (sistólica y diastólica)', dif:4, prio:'A', deps:['c01'], unlock:['c06','nf02','nf05'] },
+  { id:'c03', spec:'cardio', nombre:'Síndrome coronario agudo (SCASEST y SCACEST)', dif:5, prio:'A', deps:['c01'], unlock:['c04'] },
+  { id:'c04', spec:'cardio', nombre:'Arritmias y trastornos de la conducción', dif:4, prio:'A', deps:['c01','c03'], unlock:[] },
+  { id:'c05', spec:'cardio', nombre:'Hipertensión arterial y daño de órgano blanco', dif:3, prio:'A', deps:['c01'], unlock:['nf01','e01'] },
+  { id:'c06', spec:'cardio', nombre:'Valvulopatías y cardiopatías estructurales', dif:4, prio:'B', deps:['c01','c02'], unlock:[] },
+  { id:'c07', spec:'cardio', nombre:'Pericarditis, derrame pericárdico y taponamiento', dif:3, prio:'B', deps:['c01'], unlock:[] },
+  { id:'c08', spec:'cardio', nombre:'Miocarditis y miocardiopatías', dif:4, prio:'B', deps:['c01','c02'], unlock:[] },
+  { id:'c09', spec:'cardio', nombre:'Tromboembolismo pulmonar y trombosis venosa profunda', dif:4, prio:'A', deps:['c01','n01','h01'], unlock:[] },
+  { id:'c10', spec:'cardio', nombre:'Shock: tipos y manejo fisiopatológico', dif:5, prio:'A', deps:['c01','c02'], unlock:['i03'] },
+
+  // NEUMOLOGÍA
+  { id:'n01', spec:'neumo', nombre:'Fisiología respiratoria y control ventilatorio', dif:2, prio:'A', deps:[], unlock:['n02','n03','n04','n05','n06','c09'] },
+  { id:'n02', spec:'neumo', nombre:'EPOC: fisiopatología y exacerbaciones', dif:4, prio:'A', deps:['n01'], unlock:[] },
+  { id:'n03', spec:'neumo', nombre:'Asma bronquial y broncoespasmo', dif:3, prio:'A', deps:['n01'], unlock:[] },
+  { id:'n04', spec:'neumo', nombre:'Neumonía adquirida en la comunidad y hospitalaria', dif:3, prio:'A', deps:['n01','i01'], unlock:[] },
+  { id:'n05', spec:'neumo', nombre:'Síndrome de dificultad respiratoria aguda (SDRA)', dif:5, prio:'A', deps:['n01','i02'], unlock:[] },
+  { id:'n06', spec:'neumo', nombre:'Derrame pleural: trasudado vs exudado', dif:3, prio:'B', deps:['n01','c02'], unlock:[] },
+  { id:'n07', spec:'neumo', nombre:'Hipertensión pulmonar', dif:4, prio:'B', deps:['n01','c01'], unlock:[] },
+  { id:'n08', spec:'neumo', nombre:'Insuficiencia respiratoria aguda y crónica', dif:4, prio:'A', deps:['n01','n02'], unlock:[] },
+
+  // NEFROLOGÍA
+  { id:'nf01', spec:'nefro', nombre:'Fisiología renal y regulación del volumen', dif:2, prio:'A', deps:[], unlock:['nf02','nf03','nf04','nf05','nf06'] },
+  { id:'nf02', spec:'nefro', nombre:'Lesión renal aguda: prerrenal, renal y posrenal', dif:4, prio:'A', deps:['nf01','c01'], unlock:['nf03'] },
+  { id:'nf03', spec:'nefro', nombre:'Enfermedad renal crónica y síndrome urémico', dif:4, prio:'A', deps:['nf01','nf02'], unlock:[] },
+  { id:'nf04', spec:'nefro', nombre:'Trastornos del sodio: hiponatremia e hipernatremia', dif:4, prio:'A', deps:['nf01'], unlock:[] },
+  { id:'nf05', spec:'nefro', nombre:'Trastornos del potasio: hipo e hiperpotasemia', dif:3, prio:'A', deps:['nf01'], unlock:[] },
+  { id:'nf06', spec:'nefro', nombre:'Trastornos del equilibrio ácido-base', dif:5, prio:'A', deps:['nf01','n01'], unlock:[] },
+  { id:'nf07', spec:'nefro', nombre:'Síndrome nefrótico y nefrítico', dif:4, prio:'B', deps:['nf01'], unlock:[] },
+  { id:'nf08', spec:'nefro', nombre:'RAAS: fisiología, patología y farmacología', dif:3, prio:'A', deps:['nf01','c05'], unlock:['c02','g04'] },
+
+  // GASTROENTEROLOGÍA
+  { id:'g01', spec:'gastro', nombre:'Hemorragia digestiva alta y baja', dif:3, prio:'A', deps:[], unlock:[] },
+  { id:'g02', spec:'gastro', nombre:'Hepatitis aguda y crónica: viral, alcohólica y autoinmune', dif:4, prio:'A', deps:[], unlock:['g03','g04'] },
+  { id:'g03', spec:'gastro', nombre:'Cirrosis hepática y síndrome hepatorrenal', dif:5, prio:'A', deps:['g02','nf01'], unlock:['g04'] },
+  { id:'g04', spec:'gastro', nombre:'Hipertensión portal y sus complicaciones', dif:4, prio:'A', deps:['g03','nf08'], unlock:[] },
+  { id:'g05', spec:'gastro', nombre:'Pancreatitis aguda y crónica', dif:3, prio:'A', deps:[], unlock:[] },
+  { id:'g06', spec:'gastro', nombre:'Enfermedad inflamatoria intestinal', dif:3, prio:'B', deps:[], unlock:[] },
+  { id:'g07', spec:'gastro', nombre:'Íleo, obstrucción intestinal y abdomen agudo', dif:3, prio:'B', deps:[], unlock:[] },
+
+  // ENDOCRINOLOGÍA
+  { id:'e01', spec:'endo', nombre:'Diabetes mellitus: tipos, fisiopatología y complicaciones', dif:3, prio:'A', deps:[], unlock:['e02','e03'] },
+  { id:'e02', spec:'endo', nombre:'Cetoacidosis diabética y estado hiperosmolar', dif:5, prio:'A', deps:['e01','nf06'], unlock:[] },
+  { id:'e03', spec:'endo', nombre:'Hipoglucemia: mecanismos y manejo', dif:3, prio:'A', deps:['e01'], unlock:[] },
+  { id:'e04', spec:'endo', nombre:'Disfunción tiroidea: hipotiroidismo e hipertiroidismo', dif:3, prio:'A', deps:[], unlock:['e05'] },
+  { id:'e05', spec:'endo', nombre:'Crisis tirotóxica y coma mixedematoso', dif:5, prio:'B', deps:['e04'], unlock:[] },
+  { id:'e06', spec:'endo', nombre:'Insuficiencia suprarrenal y crisis adrenal', dif:4, prio:'B', deps:[], unlock:[] },
+  { id:'e07', spec:'endo', nombre:'Síndrome de Cushing e hiperaldosteronismo', dif:4, prio:'B', deps:['nf08'], unlock:[] },
+  { id:'e08', spec:'endo', nombre:'Calcio, fósforo y PTH: trastornos clínicos', dif:4, prio:'B', deps:['nf01'], unlock:[] },
+
+  // HEMATOLOGÍA
+  { id:'h01', spec:'hemato', nombre:'Hemostasia: coagulación, plaquetas y fibrinólisis', dif:3, prio:'A', deps:[], unlock:['h02','h03','c09'] },
+  { id:'h02', spec:'hemato', nombre:'Anemias: clasificación fisiopatológica', dif:3, prio:'A', deps:['h01'], unlock:[] },
+  { id:'h03', spec:'hemato', nombre:'Trombocitopenias y coagulopatías', dif:4, prio:'A', deps:['h01'], unlock:[] },
+  { id:'h04', spec:'hemato', nombre:'CID: fisiopatología y diagnóstico diferencial', dif:5, prio:'A', deps:['h01','i02'], unlock:[] },
+  { id:'h05', spec:'hemato', nombre:'Linfomas y leucemias: presentación clínica', dif:4, prio:'B', deps:['h01'], unlock:[] },
+
+  // INFECTOLOGÍA
+  { id:'i01', spec:'infecto', nombre:'Fisiopatología de la infección y respuesta inmune', dif:2, prio:'A', deps:[], unlock:['i02','i03','n04'] },
+  { id:'i02', spec:'infecto', nombre:'Sepsis y shock séptico (Sepsis-3)', dif:5, prio:'A', deps:['i01','c01','nf01'], unlock:['i03','h04','n05'] },
+  { id:'i03', spec:'infecto', nombre:'Antibióticos: mecanismos, resistencia y farmacocinética', dif:4, prio:'A', deps:['i01'], unlock:[] },
+  { id:'i04', spec:'infecto', nombre:'Infecciones de vías urinarias complicadas', dif:2, prio:'A', deps:['i01'], unlock:[] },
+  { id:'i05', spec:'infecto', nombre:'Endocarditis infecciosa', dif:4, prio:'A', deps:['i01','c01'], unlock:[] },
+  { id:'i06', spec:'infecto', nombre:'Meningitis y encefalitis', dif:4, prio:'A', deps:['i01','ne01'], unlock:[] },
+  { id:'i07', spec:'infecto', nombre:'Infecciones en el huésped inmunocomprometido', dif:4, prio:'B', deps:['i01'], unlock:[] },
+  { id:'i08', spec:'infecto', nombre:'VIH: fisiopatología, estadificación y TARV', dif:4, prio:'B', deps:['i01'], unlock:[] },
+
+  // NEUROLOGÍA
+  { id:'ne01', spec:'neuro', nombre:'Fisiopatología del daño neurológico y neuroplasticidad', dif:3, prio:'A', deps:[], unlock:['ne02','ne03','i06'] },
+  { id:'ne02', spec:'neuro', nombre:'Ictus isquémico y hemorrágico', dif:5, prio:'A', deps:['ne01','c01'], unlock:[] },
+  { id:'ne03', spec:'neuro', nombre:'Crisis epilépticas y status epilepticus', dif:4, prio:'A', deps:['ne01'], unlock:[] },
+  { id:'ne04', spec:'neuro', nombre:'Encefalopatía metabólica y toxic-metabólica', dif:4, prio:'A', deps:['ne01','nf06','e01'], unlock:[] },
+  { id:'ne05', spec:'neuro', nombre:'Neuropatías periféricas: polineuropatía y mononeuropatía', dif:3, prio:'B', deps:['ne01'], unlock:[] },
+  { id:'ne06', spec:'neuro', nombre:'Enfermedades neuromusculares: Guillain-Barré y MG', dif:4, prio:'B', deps:['ne01'], unlock:[] },
+
+  // REUMATOLOGÍA
+  { id:'r01', spec:'reuma', nombre:'Lupus eritematoso sistémico', dif:4, prio:'A', deps:['i01'], unlock:[] },
+  { id:'r02', spec:'reuma', nombre:'Artritis reumatoide y artritis reactiva', dif:3, prio:'B', deps:['i01'], unlock:[] },
+  { id:'r03', spec:'reuma', nombre:'Vasculitis sistémicas', dif:4, prio:'B', deps:['i01','nf01'], unlock:[] },
+  { id:'r04', spec:'reuma', nombre:'Gota e hiperuricemia', dif:3, prio:'B', deps:['nf01'], unlock:[] },
+
+  // FARMACOLOGÍA CLÍNICA
+  { id:'f01', spec:'farm', nombre:'Farmacocinética y farmacodinámica clínica', dif:3, prio:'A', deps:[], unlock:['f02','f03','f04','f05'] },
+  { id:'f02', spec:'farm', nombre:'Fármacos cardiovasculares: β-bloqueadores, IECA, diuréticos', dif:4, prio:'A', deps:['f01','c01','nf08'], unlock:[] },
+  { id:'f03', spec:'farm', nombre:'Anticoagulantes y antiagregantes plaquetarios', dif:4, prio:'A', deps:['f01','h01'], unlock:[] },
+  { id:'f04', spec:'farm', nombre:'Corticoides: efectos, usos y complicaciones', dif:3, prio:'A', deps:['f01'], unlock:[] },
+  { id:'f05', spec:'farm', nombre:'Analgesia, sedación y manejo del dolor', dif:3, prio:'B', deps:['f01'], unlock:[] },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════════════════════════════════════
+
+const DEFAULT_STATE = {
+  dia: 1,
+  completados: [],       // tema IDs completados
+  estados: {},           // id -> 'no_iniciado'|'en_progreso'|'dominado'
+  medicSteps: {},        // temaId -> { paso: bool }
+  notas: {},             // temaId -> texto de notas personales
+  startDate: null,
+  activeTema: null,
+  heatmap: {},           // 'YYYY-MM-DD' -> count de temas dominados ese día
+  temaOverrides: {},     // temaId -> { nombre, dif, prio, timeMin, spec, activo }
+  customTemas: [],       // temas agregados por el usuario
+  customEspecialidades: [], // módulos agregados por el usuario
+};
+
+let STATE = JSON.parse(localStorage.getItem('medos4_state') || 'null') || JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+// Lógica de Auto-absorción de datos desde URL (?data=)
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('data')) {
+  try {
+    const decoded = decodeURIComponent(escape(atob(urlParams.get('data'))));
+    const parsed = JSON.parse(decoded);
+    if (parsed && typeof parsed === 'object' && parsed.completados) {
+      STATE = parsed;
+      localStorage.setItem('medos4_state', JSON.stringify(STATE));
+      window.history.replaceState({}, document.title, window.location.pathname);
+      window.addEventListener('DOMContentLoaded', () => {
+        showToast('✅ ¡Progreso cargado desde enlace portátil!');
+      });
+    }
+  } catch(e) {
+    window.addEventListener('DOMContentLoaded', () => {
+      showToast('❌ Enlace portátil inválido');
+    });
+  }
+}
+
+// Asegurar que existan todas las llaves si se cargó un estado viejo
+for (const k in DEFAULT_STATE) if (!(k in STATE)) STATE[k] = JSON.parse(JSON.stringify(DEFAULT_STATE[k]));
+
+function saveState() {
+  localStorage.setItem('medos4_state', JSON.stringify(STATE));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEMARIO EFECTIVO (base + personalización desde Configuración)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function getAllEspecialidades() {
+  return ESPECIALIDADES.concat(STATE.customEspecialidades || []);
+}
+
+function getAllTemasRaw() {
+  return TEMAS.concat(STATE.customTemas || []);
+}
+
+// Devuelve solo los temas activos, con overrides aplicados (nombre/dif/prio/tiempo/módulo)
+function getAllTemas() {
+  return getAllTemasRaw()
+    .map(t => {
+      const o = STATE.temaOverrides[t.id];
+      return o ? { ...t, ...o } : t;
+    })
+    .filter(t => t.activo !== false);
+}
+
+// Para pantallas de configuración necesitamos ver TODOS los temas, activos o no
+function getAllTemasConInactivos() {
+  return getAllTemasRaw().map(t => {
+    const o = STATE.temaOverrides[t.id];
+    return o ? { ...t, ...o } : t;
+  });
+}
+
+function getTiempoEstimado(t) {
+  return t.timeMin || (45 + t.dif * 15);
+}
+
+function isCustomTema(id) { return (STATE.customTemas || []).some(t => t.id === id); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PLAN 90 DÍAS — ALGORITMO DE SECUENCIACIÓN
+// Principio: los temas sin dependencias (nodos raíz) van primero.
+// Luego se ordenan por: prioridad A > B > C, luego dif asc (fácil→difícil)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function calcularPlan() {
+  const temas = getAllTemas();
+  const completados = new Set(STATE.completados || []);
+  const ordered = [];
+  const visited = new Set();
+
+  function canStudy(t) {
+    return (t.deps || []).every(d => completados.has(d) || visited.has(d) || !temas.find(x=>x.id===d));
+  }
+
+  let iterations = 0;
+  while (ordered.length < temas.length && iterations < 400) {
+    iterations++;
+    const available = temas.filter(t => !visited.has(t.id) && canStudy(t));
+    if (!available.length) {
+      temas.filter(t => !visited.has(t.id)).forEach(t => { visited.add(t.id); ordered.push(t); });
+      break;
+    }
+    available.sort((a, b) => {
+      const pA = a.prio === 'A' ? 0 : a.prio === 'B' ? 1 : 2;
+      const pB = b.prio === 'A' ? 0 : b.prio === 'B' ? 1 : 2;
+      if (pA !== pB) return pA - pB;
+      return a.dif - b.dif;
+    });
+    const next = available[0];
+    visited.add(next.id);
+    ordered.push(next);
+  }
+  return ordered;
+}
+
+function getPlanOrdenado() { return calcularPlan(); }
+
+function getTemaDelDia() {
+  const plan = getPlanOrdenado();
+  if (!plan.length) return null;
+  // El tema del día es siempre el primer tema pendiente (no dominado) del plan
+  const pendiente = plan.find(t => getTemaEstado(t.id) !== 'dominado');
+  return pendiente || plan[plan.length - 1];
+}
+
+function getSpec(specId) {
+  return getAllEspecialidades().find(e => e.id === specId) || { name: specId, color: '#B8A9F0', emoji: '📚' };
+}
+
+function getDifStars(n) {
+  return '★'.repeat(n) + '☆'.repeat(5 - n);
+}
+
+function getTemaEstado(id) {
+  return STATE.estados[id] || 'no_iniciado';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MEDIC STEPS DATA
+// ═══════════════════════════════════════════════════════════════════════════
+
+const MEDIC_META = [
+  {
+    key: 'M', icon: '🗺️', label: 'Mapa', title: 'Mapa Mental',
+    getContent: (t) => `
+      <p>Antes de estudiar, construye el <strong>mapa conceptual</strong> del tema. Dibuja en papel el fenómeno fisiológico central y las conexiones que genera.</p>
+      <ul>
+        <li>¿Qué principio fisiológico es el núcleo de <strong>${t.nombre}</strong>?</li>
+        <li>¿Qué sistemas afecta? ¿Qué compensa? ¿Qué falla?</li>
+        <li>Dibuja flechas: causa → efecto → compensación → descompensación</li>
+      </ul>
+    `,
+  },
+  {
+    key: 'E', icon: '⚙️', label: 'Explicar', title: 'Fisiopatología core',
+    getContent: (t) => `
+      <p>Estudia el <strong>mecanismo fundamental</strong> sin memorizar detalles. Entiende <em>por qué</em> ocurre cada cosa.</p>
+      <ul>
+        <li>Evento inicial → Compensaciones útiles → Compensaciones maladaptativas</li>
+        <li>¿Por qué falla la compensación? (Descompensación)</li>
+        <li>Usa el prompt de Comprensión para que te lo expliquen desde la fisiología, no desde la clínica</li>
+      </ul>
+    `,
+  },
+  {
+    key: 'D', icon: '🩺', label: 'Detectar', title: 'Manifestaciones clínicas',
+    getContent: (t) => `
+      <p>Conecta cada síntoma y signo con su <strong>mecanismo fisiopatológico</strong>. Uno por uno.</p>
+      <ul>
+        <li>No memorices síntomas. Dedúcelos desde la fisiopatología</li>
+        <li>¿Cuál síntoma explica la compensación? ¿Cuál la descompensación?</li>
+        <li>¿Qué laboratorio mide cada mecanismo que estás estudiando?</li>
+      </ul>
+    `,
+  },
+  {
+    key: 'I', icon: '💊', label: 'Intervenir', title: 'Tratamiento razonado',
+    getContent: (t) => `
+      <p>Cada tratamiento responde <strong>una sola pregunta</strong>: ¿qué parte de la cascada fisiopatológica interrumpe?</p>
+      <ul>
+        <li>No memorices dosis. Entiende el mecanismo de acción primero</li>
+        <li>¿Por qué este fármaco en este momento de la enfermedad?</li>
+        <li>¿Cuál es la paradoja terapéutica de este tema?</li>
+      </ul>
+    `,
+  },
+  {
+    key: 'C', icon: '🔗', label: 'Conectar', title: 'Integración y red',
+    getContent: (t) => `
+      <p>Construye las <strong>conexiones</strong> con otros temas. No estudies islas, estudia una red.</p>
+      <ul>
+        <li>¿Con qué temas que ya estudiaste conecta este?</li>
+        <li>¿Qué enfermedades comparten el mismo mecanismo fisiopatológico central?</li>
+        <li>Escribe 1 paradoja clínica de este tema con su explicación</li>
+      </ul>
+    `,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PROMPTS — 7 categorías, para Gemini y NotebookLM
+// ═══════════════════════════════════════════════════════════════════════════
+
+function getPromptCategories(tema) {
+  const t = tema?.nombre || '[TEMA ACTUAL]';
+  return [
+    {
+      key: 'comprension', icon: '🧩', label: 'Comprensión',
+      title: `Explícame ${t} desde la fisiología`,
+      preview: 'Construye el mecanismo desde el principio fisiológico hasta la manifestación clínica.',
+      prompt: `Actúa como un internista que enseña desde la fisiopatología, no desde la clínica.
+
+Quiero entender "${t}" siguiendo exactamente esta estructura:
+
+1. PRINCIPIO FISIOLÓGICO ROTO: ¿Qué función normal del organismo se altera? Explícame cómo funciona normalmente antes de explicar qué falla.
+2. EVENTO INICIAL: ¿Cuál es la primera alteración? ¿Por qué ocurre?
+3. COMPENSACIONES: ¿Cómo intenta el organismo restablecer la homeostasis? Separa cuáles son útiles a corto plazo y cuáles se vuelven maladaptativas.
+4. DESCOMPENSACIÓN: ¿Por qué la compensación deja de funcionar?
+5. MANIFESTACIONES: Explícame cada síntoma y signo como consecuencia directa de un mecanismo fisiológico específico. No listas. Mecanismos.
+6. PARADOJA: Dame la paradoja clínica más importante de esta enfermedad y explícala desde la fisiopatología.
+
+No uses listas de síntomas para memorizar. Quiero entender, no memorizar.`
+    },
+    {
+      key: 'socratico', icon: '🗣️', label: 'Tutor socrático',
+      title: `Guíame con preguntas sobre ${t}`,
+      preview: 'La IA no da respuestas directas: te hace preguntas hasta que razones la respuesta tú mismo.',
+      prompt: `Actúa como un tutor socrático de medicina interna. Vamos a estudiar "${t}".
+
+Reglas estrictas:
+1. Nunca me des la respuesta directamente.
+2. Hazme una pregunta a la vez, empezando por lo más básico (fisiología normal) y subiendo de nivel según mis respuestas.
+3. Si respondo mal o incompleto, no me corrijas de inmediato: hazme una pregunta que me lleve a notar el error yo mismo.
+4. Si me atasco dos veces seguidas en la misma pregunta, dame una pista pequeña, no la respuesta completa.
+5. Al final de la sesión, resume qué conceptos dominé y cuáles necesito repasar.
+
+Empieza con la primera pregunta sobre el principio fisiológico central de "${t}".`
+    },
+    {
+      key: 'caso', icon: '🏥', label: 'Caso clínico',
+      title: `Caso clínico de ${t}`,
+      preview: 'Un caso realista para practicar razonamiento diagnóstico paso a paso.',
+      prompt: `Genera un caso clínico realista de "${t}" para practicar razonamiento diagnóstico, con este formato:
+
+1. Preséntame solo el motivo de consulta y datos generales del paciente.
+2. Espera mi respuesta antes de darme más datos (anamnesis, luego examen físico, luego laboratorios, luego imágenes).
+3. En cada paso, pregúntame qué pienso antes de continuar (diagnósticos diferenciales, qué pediría a continuación y por qué).
+4. Al final, revela el diagnóstico correcto y explica el razonamiento fisiopatológico completo, señalando en qué paso mi razonamiento fue correcto o se desvió.
+
+No me des toda la información de una vez. Simula una consulta real.`
+    },
+    {
+      key: 'ddx', icon: '🔍', label: 'Diagnóstico diferencial',
+      title: `¿Cuándo ${t} parece otra cosa?`,
+      preview: 'Diferencial basado en fisiopatología, no en listas memorizadas.',
+      prompt: `Estoy estudiando "${t}". Explícame los diagnósticos diferenciales más importantes de esta forma:
+
+Para cada diagnóstico diferencial:
+1. ¿Por qué clínicamente se parece a "${t}"? ¿Qué mecanismo fisiológico comparten?
+2. ¿En qué principio fisiológico dejan de parecerse?
+3. ¿Cuál es el hallazgo clave que los diferencia fisiopatológicamente?
+
+No quiero listas. Quiero entender por qué se parecen y por qué no.
+Máximo 5 diagnósticos diferenciales, bien explicados.`
+    },
+    {
+      key: 'tratamiento', icon: '💊', label: 'Tratamiento desde la fisiopatología',
+      title: `Tratamiento de ${t} desde la cascada`,
+      preview: 'Cada fármaco interrumpe la cascada fisiopatológica en un punto específico.',
+      prompt: `Para "${t}", explícame el tratamiento respondiendo únicamente:
+¿En qué punto exacto de la cascada fisiopatológica interrumpe este fármaco?
+
+Para cada tratamiento principal:
+1. El mecanismo de la enfermedad que bloquea o corrige.
+2. Por qué ese punto de la cascada es estratégico.
+3. La paradoja o contraintuitividad de este tratamiento (si existe).
+4. Por qué funciona a largo plazo aunque parezca contraproducente a corto plazo.
+
+No quiero protocolos ni dosis de memoria. Quiero entender el razonamiento detrás de cada decisión.`
+    },
+    {
+      key: 'feynman', icon: '✏️', label: 'Método Feynman',
+      title: `Evalúa mi explicación de ${t}`,
+      preview: 'Escribes tu propia explicación simple y la IA detecta huecos de comprensión.',
+      prompt: `Voy a explicarte "${t}" con mis propias palabras, como si se lo explicara a alguien sin conocimientos médicos.
+
+Cuando termine mi explicación, actúa como un evaluador estricto:
+1. Señala qué partes de mi explicación fueron claras y correctas.
+2. Señala en qué partes usé jerga médica en vez de explicar el mecanismo real (eso indica que no lo entendí del todo).
+3. Señala cualquier hueco lógico o paso que salté sin darme cuenta.
+4. Hazme 2-3 preguntas de seguimiento para forzarme a llenar esos huecos.
+
+Aquí está mi explicación de "${t}":
+[ESCRIBE AQUÍ TU EXPLICACIÓN EN TUS PROPIAS PALABRAS]`
+    },
+    {
+      key: 'examen', icon: '🎤', label: 'Examen oral',
+      title: `Examíname oralmente sobre ${t}`,
+      preview: 'Simula un examen oral como si fueras el médico tratante evaluando a un interno.',
+      prompt: `Actúa como un médico internista tratante tomándome un examen oral sobre "${t}", como se hace en el pase de visita hospitalario.
+
+Reglas:
+1. Hazme preguntas una por una, empezando por fisiopatología y subiendo en dificultad hacia manejo clínico.
+2. Sé exigente: si mi respuesta es vaga, pídeme que sea más específico o que justifique con el mecanismo.
+3. Incluye al menos una pregunta trampa relacionada con una complicación o paradoja del tema.
+4. Al final, dame una evaluación honesta: qué tan preparado estoy para manejar un paciente real con "${t}", en escala de 1 a 10, y qué debo reforzar.
+
+Empieza con la primera pregunta.`
+    },
+  ];
+}
+
+// Prompts para el botón "No entendí" — reabordar el tema desde otro enfoque
+function getNoEntendiPrompts(tema) {
+  const t = tema?.nombre || '[TEMA ACTUAL]';
+  return [
+    { key:'fisio', icon:'🧬', label:'Explícalo desde la fisiología',
+      prompt:`No entendí "${t}". Explícamelo de nuevo, pero empieza obligatoriamente desde la fisiología normal (qué pasa en un cuerpo sano) antes de tocar la enfermedad. Usa un lenguaje simple, sin asumir que ya conozco términos avanzados.` },
+    { key:'pasos', icon:'🪜', label:'Explícalo paso a paso',
+      prompt:`No entendí "${t}". Explícamelo dividiéndolo en pasos numerados muy pequeños, donde cada paso sea una sola idea. No avances al siguiente paso sin haber cerrado completamente el anterior. Al final de cada paso, resume en una frase qué acabo de aprender.` },
+    { key:'analogia', icon:'🎈', label:'Explícalo con analogías',
+      prompt:`No entendí "${t}". Explícamelo usando 2-3 analogías cotidianas (mecánicas, de plomería, eléctricas, etc.) que representen fielmente el mecanismo fisiopatológico. Después de cada analogía, dime explícitamente en qué se parece y en qué NO se parece a la fisiología real, para evitar que memorice una comparación incorrecta.` },
+    { key:'socratico', icon:'❓', label:'Hazme preguntas socráticas',
+      prompt:`No entendí "${t}". En vez de explicármelo directamente, hazme preguntas sencillas y progresivas que me ayuden a llegar yo mismo a la respuesta. Empieza desde el concepto más básico posible.` },
+    { key:'caso', icon:'🏥', label:'Enséñamelo con un caso clínico',
+      prompt:`No entendí "${t}". Enséñamelo a través de un caso clínico corto y concreto: preséntame un paciente típico y ve explicando el mecanismo fisiopatológico a medida que aparecen los hallazgos clínicos del caso, conectando cada dato con su causa.` },
+  ];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NAVEGACIÓN
+// ═══════════════════════════════════════════════════════════════════════════
+
+let currentScreen = 'inicio';
+
+function goTo(screen) {
+  currentScreen = screen;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const scr = document.getElementById('s-' + screen);
+  if (scr) scr.classList.add('active');
+  const navBtn = document.querySelector(`.nav-btn[data-screen="${screen}"]`);
+  if (navBtn) navBtn.classList.add('active');
+  renderScreen(screen);
+}
+
+function renderScreen(screen) {
+  const el = document.getElementById('s-' + screen);
+  if (!el) return;
+  if (screen === 'inicio')    el.innerHTML = renderInicio();
+  if (screen === 'plan')      el.innerHTML = renderPlan();
+  if (screen === 'tema')      el.innerHTML = renderTema();
+  if (screen === 'prompts')   el.innerHTML = renderPrompts();
+  if (screen === 'progreso')  el.innerHTML = renderProgreso();
+  if (screen === 'config')    el.innerHTML = renderConfig();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER: INICIO
+// ═══════════════════════════════════════════════════════════════════════════
+
+function renderInicio() {
+  const tema = getTemaDelDia();
+  if (!tema) {
+    return `<div class="page-title">MedOS</div><div class="card" style="text-align:center;padding:40px 16px;">No hay temas activos. Ve a Configuración del Temario para activar o agregar temas.</div>`;
+  }
+  const spec = getSpec(tema.spec);
+  const allTemas = getAllTemas();
+  const totalTemas = allTemas.length;
+  const dominados = allTemas.filter(t => getTemaEstado(t.id) === 'dominado').length;
+  const pct = totalTemas ? Math.round((dominados / totalTemas) * 100) : 0;
+
+  const unlockCount = (tema.unlock || []).filter(id => allTemas.some(x=>x.id===id)).length;
+  const whyStudy = unlockCount > 0
+    ? `Estudiar este tema desbloquea <strong>${unlockCount} tema${unlockCount>1?'s':''}</strong> que dependen de él. Es un nodo fundamental de la red.`
+    : `Tema de alta prioridad clínica. Domina el concepto central antes de avanzar a las complicaciones.`;
+
+  const medicData = STATE.medicSteps[tema.id] || {};
+  const stepsHoy = MEDIC_META.filter(s => medicData[s.key]).length;
+
+  const timeEst = `${getTiempoEstimado(tema)} min`;
+
+  // Streak calculation for header
+  const hoy = new Date().toISOString().split('T')[0];
+  const metaHoyCompletada = (STATE.heatmap[hoy] || 0) > 0;
+  const rachaVal = calcRacha();
+  const rachaClass = metaHoyCompletada ? 'streak-active' : 'streak-pending';
+
+  const playButtonLabel = stepsHoy > 0 ? 'Continuar' : 'PLAY';
+
+  return `
+    <div class="inicio-header">
+      <div class="inicio-logo">Med<span>OS</span></div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="${rachaClass}" style="font-size:15px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:2px;" onclick="goTo('progreso')" title="Racha de estudio">
+          ${rachaVal}🔥
+        </span>
+        <div class="inicio-day-badge">DÍA ${STATE.dia} / 90</div>
+      </div>
+    </div>
+
+    <div class="ecg-line">
+      <svg width="100%" height="36" viewBox="0 0 360 36" preserveAspectRatio="none">
+        <path class="ecg-path" d="M0,18 L40,18 L50,18 L55,4 L60,32 L65,10 L72,18 L120,18 L125,18 L130,4 L135,32 L140,10 L147,18 L200,18 L205,18 L210,4 L215,32 L220,10 L227,18 L280,18 L285,18 L290,4 L295,32 L300,10 L307,18 L360,18"
+          fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- HERO CARD: ESTADO DE FLOW CON BOTÓN PLAY GIGANTE -->
+    <div class="hero-card" style="text-align: center; padding: 24px 20px 20px;">
+      <div class="hero-specialty">${spec.emoji} ${spec.name}</div>
+      <div class="hero-tema" style="font-size: 19px; margin-bottom: 6px;">${tema.nombre}</div>
+      <div class="hero-why" style="font-size: 12px; margin-bottom: 12px;">${whyStudy}</div>
+      
+      <div class="play-container">
+        <button class="play-btn-giant" onclick="abrirSesion()">
+          <span class="play-icon">▶</span>
+          <span class="play-btn-label">${playButtonLabel}</span>
+        </button>
+      </div>
+
+      <div class="hero-meta" style="justify-content: center; margin-top: 12px; margin-bottom: 0;">
+        <span class="tag" style="background:${spec.color}20;color:${spec.color};">${getDifStars(tema.dif)}</span>
+        <span class="tag" style="background:${tema.prio==='A'?'var(--red-dim)':'var(--yellow-dim)'};color:${tema.prio==='A'?'var(--red-ink)':'var(--yellow-ink)'};">Prioridad ${tema.prio}</span>
+        <span class="tag" style="background:var(--s2);color:var(--text2);">⏱ ${timeEst}</span>
+      </div>
+    </div>
+
+    <!-- ELEMENTOS SECUNDARIOS ATENUADOS (COMPRESIÓN PERIFÉRICA) -->
+    <div class="dimmed-flow">
+      <div class="inicio-stats">
+        <div class="stat-card">
+          <div class="stat-num">${pct}%</div>
+          <div class="stat-label">Avance</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">${dominados}</div>
+          <div class="stat-label">Dominados</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">${totalTemas - dominados}</div>
+          <div class="stat-label">Restantes</div>
+        </div>
+      </div>
+
+      <div class="daily-progress">
+        <div class="dp-label">Flujo MEDIC de hoy — ${stepsHoy}/5 completados</div>
+        <div class="dp-bar-wrap">
+          <div class="dp-bar" style="width:${(stepsHoy/5)*100}%"></div>
+        </div>
+        <div class="dp-steps">
+          ${MEDIC_META.map(s => `<div class="dp-step ${medicData[s.key]?'done':''}">${s.key}</div>`).join('')}
+        </div>
+      </div>
+
+      <button class="btn btn-secondary" onclick="replanificarSemana()" style="margin-top:4px;">
+        🔄 Replanificar semana
+      </button>
+
+      <button class="btn btn-ghost" onclick="goTo('prompts')" style="margin-top:8px; width: 100%; display: block; text-align: center;">
+        ◎ Abrir prompts para Gemini y NotebookLM →
+      </button>
+    </div>
+  `;
+}
+
+function abrirSesion() {
+  const tema = getTemaDelDia();
+  if (!tema) return;
+  STATE.activeTema = tema.id;
+  if (STATE.estados[tema.id] === 'no_iniciado' || !STATE.estados[tema.id]) {
+    STATE.estados[tema.id] = 'en_progreso';
+  }
+  saveState();
+  goTo('tema');
+}
+
+// Reorganiza el plan reconociendo cuántos temas realmente se completaron,
+// para que "Día X" siempre refleje la realidad si algún día no se estudió (o se adelantó).
+function replanificarSemana() {
+  const completadosReales = (STATE.completados || []).length;
+  const diaAnterior = STATE.dia;
+  STATE.dia = Math.min(completadosReales + 1, 90);
+  saveState();
+  if (STATE.dia === diaAnterior) {
+    showToast('✓ El plan ya estaba al día');
+  } else if (STATE.dia < diaAnterior) {
+    showToast(`🔄 Plan ajustado — ahora estás en el día ${STATE.dia}`);
+  } else {
+    showToast(`🔄 Plan reorganizado — día ${STATE.dia}`);
+  }
+  renderScreen('inicio');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER: MI PLAN
+// ═══════════════════════════════════════════════════════════════════════════
+
+let planFilter = 'todos';
+let openSpecs = {};
+
+function renderPlan() {
+  const plan = getPlanOrdenado();
+  const temaDelDia = getTemaDelDia();
+
+  const filterBtns = ['todos','A','B','no_iniciado','en_progreso','dominado'].map(f => {
+    const labels = { todos:'Todos', A:'Alta prioridad', B:'Media', no_iniciado:'No iniciado', en_progreso:'En progreso', dominado:'Dominado' };
+    return `<div class="pill ${planFilter===f?'active':''}" onclick="setPlanFilter('${f}')">${labels[f]}</div>`;
+  }).join('');
+
+  const sections = getAllEspecialidades().map(spec => {
+    const temasSpec = plan.filter(t => t.spec === spec.id);
+    const filtrados = temasSpec.filter(t => {
+      if (planFilter === 'todos') return true;
+      if (planFilter === 'A' || planFilter === 'B') return t.prio === planFilter;
+      return getTemaEstado(t.id) === planFilter;
+    });
+    if (!filtrados.length) return '';
+
+    const dominadosSpec = filtrados.filter(t => getTemaEstado(t.id) === 'dominado').length;
+    const isOpen = openSpecs[spec.id] !== false;
+
+    const items = filtrados.map((t) => {
+      const estado = getTemaEstado(t.id);
+      const isHoy = temaDelDia && temaDelDia.id === t.id;
+      return `
+        <div class="tema-item ${estado}" onclick="abrirTema('${t.id}')">
+          <div class="tema-estado-dot ${estado}"></div>
+          <div class="tema-info">
+            <div class="tema-nombre">${isHoy ? '▶ ' : ''}${t.nombre}</div>
+            <div class="tema-meta">
+              <span class="tema-dif">${getDifStars(t.dif)}</span>
+              <span class="tema-prio">· Prio ${t.prio}</span>
+              <span class="tema-time">· ⏱ ${getTiempoEstimado(t)} min</span>
+              ${isHoy ? `<span class="tag" style="font-size:9px;background:var(--accent-dim);color:var(--accent2);padding:2px 6px;">HOY</span>` : ''}
+            </div>
+          </div>
+          <div class="tema-chevron">›</div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="spec-section ${isOpen?'open':''}" id="spec-${spec.id}">
+        <div class="spec-header" onclick="toggleSpec('${spec.id}')">
+          <div class="spec-dot" style="background:${spec.color}"></div>
+          <div class="spec-name">${spec.emoji} ${spec.name}</div>
+          <div class="spec-count">${dominadosSpec}/${filtrados.length}</div>
+          <div class="spec-chevron">›</div>
+        </div>
+        ${items}
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="page-title-row">
+      <div class="page-title">Mi Plan</div>
+      <button class="icon-btn" onclick="goTo('config')" title="Configuración del temario">⚙︎</button>
+    </div>
+    <div class="page-sub">Secuenciado por dependencias — no por orden del libro</div>
+    <div class="plan-filters">${filterBtns}</div>
+    ${sections || '<div style="text-align:center;color:var(--text3);padding:40px 0;">Sin temas con este filtro</div>'}
+  `;
+}
+
+function setPlanFilter(f) {
+  planFilter = f;
+  renderScreen('plan');
+}
+
+function toggleSpec(id) {
+  openSpecs[id] = !(openSpecs[id] !== false);
+  renderScreen('plan');
+}
+
+function abrirTema(id) {
+  STATE.activeTema = id;
+  if (!STATE.estados[id] || STATE.estados[id] === 'no_iniciado') {
+    STATE.estados[id] = 'en_progreso';
+  }
+  saveState();
+  goTo('tema');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER: TEMA ACTUAL (MEDIC)
+// ═══════════════════════════════════════════════════════════════════════════
+
+let openMedicSteps = {};
+let noEntendiOpen = false;
+
+function renderTema() {
+  const temaId = STATE.activeTema || (getTemaDelDia() || {}).id;
+  const tema = getAllTemas().find(t => t.id === temaId) || getTemaDelDia();
+  if (!tema) {
+    return `<div class="page-title">Tema</div><div class="card" style="text-align:center;padding:40px 16px;">No hay ningún tema activo seleccionado.</div>`;
+  }
+  const spec = getSpec(tema.spec);
+  const estado = getTemaEstado(tema.id);
+  const medicData = STATE.medicSteps[tema.id] || {};
+  const stepsHechos = MEDIC_META.filter(s => medicData[s.key]).length;
+  const allDone = stepsHechos === MEDIC_META.length;
+
+  const estadoColor = estado === 'dominado' ? 'var(--green-ink)' : estado === 'en_progreso' ? 'var(--yellow-ink)' : 'var(--text3)';
+  const estadoLabel = { no_iniciado: 'No iniciado', en_progreso: 'En progreso', dominado: 'Dominado' }[estado];
+
+  const steps = MEDIC_META.map((s) => {
+    const done = !!medicData[s.key];
+    const isOpen = openMedicSteps[s.key] !== false && !done;
+    return `
+      <div class="medic-step ${done?'done':''} ${isOpen?'open':''}" id="ms-${s.key}">
+        <div class="medic-step-header" onclick="toggleMedicStep('${s.key}')">
+          <div class="medic-check" onclick="event.stopPropagation();toggleMedicCheck('${tema.id}','${s.key}')">
+            ${done ? '✓' : ''}
+          </div>
+          <div class="medic-step-icon">${s.icon}</div>
+          <div class="medic-step-info">
+            <div class="medic-step-label">${s.key} · ${s.label}</div>
+            <div class="medic-step-title">${s.title}</div>
+          </div>
+          <div class="medic-step-chevron">›</div>
+        </div>
+        <div class="medic-step-body">
+          ${s.getContent(tema)}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const segs = MEDIC_META.map(s => `<div class="medic-seg ${medicData[s.key]?'done':''}"></div>`).join('');
+
+  const notaActual = STATE.notas[tema.id] || '';
+
+  const neOptions = getNoEntendiPrompts(tema).map(o => `
+    <div class="ne-option" onclick="openNeModal('${o.key}', '${o.label}', '${o.icon}')"><span>${o.icon}</span> ${o.label}</div>
+  `).join('');
+
+  return `
+    <div class="medic-header">
+      <div class="medic-spec" style="color:${spec.color}">${spec.emoji} ${spec.name}</div>
+      <div class="medic-titulo">${tema.nombre}</div>
+      <div class="medic-tags">
+        <span class="tag" style="background:${spec.color}18;color:${spec.color};">${getDifStars(tema.dif)}</span>
+        <span class="tag" style="background:${estadoColor}18;color:${estadoColor};">${estadoLabel}</span>
+        <span class="tag" style="background:var(--s2);color:var(--text2);">${stepsHechos}/5 MEDIC</span>
+      </div>
+    </div>
+
+    <div class="medic-progress-strip">${segs}</div>
+
+    <div class="medic-steps">${steps}</div>
+
+    <button class="medic-finish-btn ${allDone?'enabled':''}" onclick="marcarDominado('${tema.id}')">
+      ✓ Marcar como Dominado
+    </button>
+
+    <div class="section-label">Notas personales</div>
+    <textarea class="field-textarea" placeholder="Escribe aquí tus propias notas, dudas o resúmenes de este tema..."
+      onchange="guardarNota('${tema.id}', this.value)">${notaActual}</textarea>
+
+    <button class="no-entendi-btn" onclick="toggleNoEntendi()">
+      🤔 No entendí — reabordar este tema
+    </button>
+    <div class="ne-options ${noEntendiOpen?'open':''}" id="ne-options">
+      ${neOptions}
+    </div>
+
+    <div style="margin-top:14px;">
+      <button class="btn btn-secondary" onclick="goTo('prompts')" style="font-size:13px;padding:12px;">
+        ◎ Abrir prompts para este tema →
+      </button>
+    </div>
+  `;
+}
+
+function toggleMedicStep(key) {
+  openMedicSteps[key] = openMedicSteps[key] === false ? true : false;
+  renderScreen('tema');
+}
+
+function toggleMedicCheck(temaId, key) {
+  if (!STATE.medicSteps[temaId]) STATE.medicSteps[temaId] = {};
+  STATE.medicSteps[temaId][key] = !STATE.medicSteps[temaId][key];
+  if (STATE.medicSteps[temaId][key]) openMedicSteps[key] = false;
+  else openMedicSteps[key] = true;
+  if (STATE.estados[temaId] === 'no_iniciado') STATE.estados[temaId] = 'en_progreso';
+  saveState();
+  renderScreen('tema');
+}
+
+function guardarNota(temaId, texto) {
+  STATE.notas[temaId] = texto;
+  saveState();
+  showToast('✓ Nota guardada');
+}
+
+function toggleNoEntendi() {
+  noEntendiOpen = !noEntendiOpen;
+  const el = document.getElementById('ne-options');
+  if (el) el.classList.toggle('open', noEntendiOpen);
+}
+
+function marcarDominado(temaId) {
+  STATE.estados[temaId] = 'dominado';
+  if (!STATE.completados.includes(temaId)) STATE.completados.push(temaId);
+  const hoy = new Date().toISOString().split('T')[0];
+  STATE.heatmap[hoy] = (STATE.heatmap[hoy] || 0) + 1;
+  STATE.dia = Math.min(STATE.dia + 1, 90);
+  STATE.activeTema = null;
+  saveState();
+  
+  // Disparar celebración de confeti
+  try { launchConfetti(); } catch(e) { console.error(e); }
+  
+  showToast('✓ Tema dominado — Día ' + STATE.dia);
+  setTimeout(() => goTo('inicio'), 1200);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER: PROMPTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function renderPrompts() {
+  const temaId = STATE.activeTema || (getTemaDelDia() || {}).id;
+  const tema = getAllTemas().find(t => t.id === temaId) || getTemaDelDia();
+  const categorias = getPromptCategories(tema);
+
+  const cards = categorias.map((p, i) => `
+    <div class="prompt-card">
+      <div class="prompt-card-label"><span>${p.icon}</span> ${p.label}</div>
+      <div class="prompt-card-title">${p.title}</div>
+      <div class="prompt-card-preview">${p.preview}</div>
+      <div style="display: flex; gap: 8px;">
+        <button class="prompt-copy-btn" onclick="copyPrompt(${i})" style="flex: 1; padding: 10px;">
+          <span>📋</span> Copiar
+        </button>
+        <button class="prompt-copy-btn" onclick="abrirGeminiPromptsTab(${i})" style="flex: 1; padding: 10px; background: var(--accent-dim); color: var(--accent2); border-color: #B4A2F555;">
+          <span>🚀</span> Gemini
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  window._currentPrompts = categorias;
+
+  return `
+    <div class="page-title">Prompts</div>
+    <div class="page-sub">Para: <strong>${tema ? tema.nombre : '—'}</strong> · listos para Gemini o NotebookLM</div>
+    ${cards}
+    <div class="card" style="background:var(--s2);border-style:dashed;margin-top:6px;">
+      <div style="font-size:12px;color:var(--text2);line-height:1.7;">
+        💡 <strong style="color:var(--text);">Cómo usar:</strong> Copia el prompt o pulsa "Gemini" para abrir la sesión de IA. Úsalo junto con tus fuentes del tema para entender mecanismos, no memorizar respuestas.
+      </div>
+    </div>
+  `;
+}
+
+function copyText(text) {
+  if (!text) return;
+  navigator.clipboard.writeText(text)
+    .then(() => showToast('📋 Prompt copiado'))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('📋 Prompt copiado');
+    });
+}
+
+function copyPrompt(idx) {
+  const p = window._currentPrompts?.[idx];
+  if (!p) return;
+  copyText(p.prompt);
+}
+
+function abrirGeminiPromptsTab(idx) {
+  const p = window._currentPrompts?.[idx];
+  if (!p) return;
+  const url = 'https://gemini.google.com/app?q=' + encodeURIComponent(p.prompt);
+  window.open(url, '_blank');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER: PROGRESO
+// ═══════════════════════════════════════════════════════════════════════════
+
+function calcRacha() {
+  let racha = 0;
+  let d = new Date();
+  while (true) {
+    const key = d.toISOString().split('T')[0];
+    if ((STATE.heatmap[key] || 0) > 0) {
+      racha++;
+      d.setDate(d.getDate() - 1);
+    } else break;
+  }
+  return racha;
+}
+
+function calcHorasEstudiadas() {
+  const temas = getAllTemasConInactivos();
+  const minutos = (STATE.completados || []).reduce((sum, id) => {
+    const t = temas.find(x => x.id === id);
+    return sum + (t ? getTiempoEstimado(t) : 0);
+  }, 0);
+  return (minutos / 60);
+}
+
+function calcEspecialidadesFuerteDebil() {
+  const specs = getAllEspecialidades();
+  const temas = getAllTemas();
+  const pcts = specs.map(spec => {
+    const ts = temas.filter(t => t.spec === spec.id);
+    if (!ts.length) return null;
+    const dom = ts.filter(t => getTemaEstado(t.id) === 'dominado').length;
+    return { spec, pct: Math.round((dom / ts.length) * 100), dom, total: ts.length };
+  }).filter(Boolean);
+  const conProgreso = pcts.filter(p => p.dom > 0);
+  if (!conProgreso.length) return { fuerte: null, debil: null };
+  const sorted = [...conProgreso].sort((a,b) => b.pct - a.pct);
+  return { fuerte: sorted[0], debil: sorted[sorted.length - 1] };
+}
+
+function isTejedorDeRedes() {
+  const plan = getAllTemasRaw();
+  return (STATE.completados || []).some(id => {
+    const tema = plan.find(t => t.id === id);
+    if (!tema) return false;
+    const unlockCount = (tema.unlock || []).filter(uId => plan.some(x => x.id === uId)).length;
+    return unlockCount >= 5;
+  });
+}
+
+function toggleBitacora() {
+  window.bitacoraOpen = !window.bitacoraOpen;
+  renderScreen('progreso');
+}
+
+function renderProgreso() {
+  const temas = getAllTemas();
+  const totalTemas = temas.length;
+  const dominados = temas.filter(t => getTemaEstado(t.id) === 'dominado').length;
+  const diasRestantes = Math.max(90 - STATE.dia + 1, 0);
+  const racha = calcRacha();
+  const horas = calcHorasEstudiadas();
+  const { fuerte, debil } = calcEspecialidadesFuerteDebil();
+
+  const hoy = new Date().toISOString().split('T')[0];
+  const metaHoyCompletada = (STATE.heatmap[hoy] || 0) > 0;
+  const rachaClass = metaHoyCompletada ? 'streak-active' : 'streak-pending';
+
+  const fuerteHtml = fuerte ? `
+    <div class="spec-strength-row">
+      <div class="spec-strength-icon">${fuerte.spec.emoji}</div>
+      <div class="spec-strength-text">
+        <div class="spec-strength-title">Especialidad más fuerte</div>
+        <div class="spec-strength-name">${fuerte.spec.name}</div>
+      </div>
+      <div class="spec-strength-pct" style="color:var(--green-ink);">${fuerte.pct}%</div>
+    </div>` : '';
+
+  const debilHtml = (debil && debil !== fuerte) ? `
+    <div class="spec-strength-row">
+      <div class="spec-strength-icon">${debil.spec.emoji}</div>
+      <div class="spec-strength-text">
+        <div class="spec-strength-title">Especialidad más débil</div>
+        <div class="spec-strength-name">${debil.spec.name}</div>
+      </div>
+      <div class="spec-strength-pct" style="color:var(--red-ink);">${debil.pct}%</div>
+    </div>` : '';
+
+  const sinDatos = (!fuerte && !debil) ? `
+    <div class="card" style="text-align:center;color:var(--text3);font-size:13px;">
+      Domina al menos un tema para ver tu especialidad más fuerte y más débil.
+    </div>` : '';
+
+  // Logros (Medallas)
+  const medals = [
+    { id: 'primer_resp', icon: '🎖️', name: 'Primer Respondedor', desc: '1 tema dom.' },
+    { id: 'fuego_sost', icon: '🔥', name: 'Fuego Sostenido', desc: 'Racha de 5 días' },
+    { id: 'tejedor_red', icon: '🕸️', name: 'Tejedor de Redes', desc: 'Nodo raíz dom.' },
+    { id: 'modo_guardia', icon: '🌙', name: 'Modo Guardia', desc: 'Modo oscuro' },
+    { id: 'portador_saber', icon: '🔗', name: 'Portador Saber', desc: 'Link generado' }
+  ];
+
+  // Evaluar estados
+  const medalsUnlocked = {
+    primer_resp: STATE.completados.length >= 1,
+    fuego_sost: racha >= 5,
+    tejedor_red: isTejedorDeRedes(),
+    modo_guardia: !!STATE.guardiaNocturna,
+    portador_saber: !!STATE.linkGenerado
+  };
+
+  const medalsHtml = medals.map(m => {
+    const isUnlocked = medalsUnlocked[m.id];
+    return `
+      <div class="medal-card ${isUnlocked ? '' : 'locked'}" title="${m.desc}">
+        <div class="medal-icon">${m.icon}</div>
+        <div class="medal-name">${m.name}</div>
+        <div class="medal-desc">${m.desc}</div>
+      </div>
+    `;
+  }).join('');
+
+  // Bitácora de Insights colapsable
+  if (window.bitacoraOpen === undefined) window.bitacoraOpen = false;
+  const dominatedTemas = temas.filter(t => getTemaEstado(t.id) === 'dominado');
+  const notesList = dominatedTemas.map(t => {
+    const note = STATE.notas[t.id]?.trim();
+    if (!note) return '';
+    const spec = getSpec(t.spec);
+    return `
+      <div class="bitacora-item" style="border-left: 3px solid ${spec.color}; padding-left: 10px; margin-bottom: 12px; text-align: left;">
+        <div style="font-size: 11px; font-weight: 700; color: ${spec.color};">${spec.emoji} ${t.nombre}</div>
+        <div style="font-size: 12px; color: var(--text); white-space: pre-wrap; margin-top: 4px; line-height: 1.5;">${note}</div>
+      </div>
+    `;
+  }).filter(Boolean).join('');
+
+  const bitacoraHtml = `
+    <div class="section-label" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-top: 18px;" onclick="toggleBitacora()">
+      <span>📋 Bitácora de Insights (${dominatedTemas.filter(t => STATE.notas[t.id]?.trim()).length})</span>
+      <span style="font-size:12px; color:var(--text3); transition: transform var(--trans); display: inline-block; transform: ${window.bitacoraOpen ? 'rotate(90deg)' : 'none'};">›</span>
+    </div>
+    <div style="display: ${window.bitacoraOpen ? 'block' : 'none'}; margin-top: 8px;">
+      <div class="card" style="max-height: 250px; overflow-y: auto; padding: 12px 14px;">
+        ${notesList || '<div style="font-size:11.5px; color:var(--text3); text-align:center; padding:10px 0;">No hay notas guardadas en temas dominados aún.</div>'}
+      </div>
+    </div>
+  `;
+
+  return `
+    <div class="page-title">Progreso</div>
+    <div class="page-sub">90 días de preparación</div>
+
+    <div class="progress-big-grid">
+      <div class="progress-big-card">
+        <div class="progress-big-num">${horas.toFixed(1)}h</div>
+        <div class="progress-big-label">Horas estudiadas</div>
+      </div>
+      <div class="progress-big-card">
+        <div class="progress-big-num ${rachaClass}">${racha}🔥</div>
+        <div class="progress-big-label">Racha (días)</div>
+      </div>
+      <div class="progress-big-card">
+        <div class="progress-big-num" style="color:var(--green-ink);">${dominados}/${totalTemas}</div>
+        <div class="progress-big-label">Temas completados</div>
+      </div>
+      <div class="progress-big-card">
+        <div class="progress-big-num">${diasRestantes}</div>
+        <div class="progress-big-label">Días restantes</div>
+      </div>
+    </div>
+
+    <!-- SISTEMA DE LOGROS / MEDALLAS -->
+    <div class="section-label">Medallas de Logros</div>
+    <div class="medals-grid">
+      ${medalsHtml}
+    </div>
+
+    <div class="section-label">Especialidades</div>
+    ${fuerteHtml}${debilHtml}${sinDatos}
+
+    <!-- BITÁCORA DE INSIGHTS -->
+    ${bitacoraHtml}
+
+    <div style="margin-top:20px; display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn btn-primary" onclick="exportarProgreso()" style="font-size:13px; padding: 12px;">
+        🔗 Generar Link Portátil
+      </button>
+      <button class="btn btn-secondary" style="font-size:13px; padding: 12px;" onclick="if(confirm('¿Reiniciar TODO el progreso? Esto no borra tu temario personalizado.')){STATE.dia=1;STATE.completados=[];STATE.estados={};STATE.medicSteps={};STATE.notas={};STATE.heatmap={};STATE.activeTema=null;saveState();goTo('inicio');}">
+        Reiniciar progreso
+      </button>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER: CONFIGURACIÓN DEL TEMARIO
+// ═══════════════════════════════════════════════════════════════════════════
+
+let expandedConfigTemas = {};
+
+function renderConfig() {
+  const specs = getAllEspecialidades();
+  const temas = getAllTemasConInactivos();
+
+  const specOptions = specs.map(s => `<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('');
+
+  const rows = temas.map(t => {
+    const spec = getSpec(t.spec);
+    const isExpanded = !!expandedConfigTemas[t.id];
+    const activo = t.activo !== false;
+    return `
+      <div class="config-tema-row ${isExpanded?'expanded':''}" id="cfgrow-${t.id}">
+        <div class="config-tema-top" onclick="toggleConfigTema('${t.id}')">
+          <div class="spec-dot" style="background:${spec.color}"></div>
+          <strong style="${activo?'':'color:var(--text3);text-decoration:line-through;'}">${t.nombre}</strong>
+          <label class="switch" onclick="event.stopPropagation()">
+            <input type="checkbox" ${activo?'checked':''} onchange="toggleTemaActivo('${t.id}', this.checked)">
+            <div class="switch-track"></div>
+            <div class="switch-thumb"></div>
+          </label>
+        </div>
+        <div class="config-tema-fields">
+          <div>
+            <div class="field-label">Nombre</div>
+            <input class="field-input" value="${t.nombre.replace(/"/g,'&quot;')}" onchange="updateTemaField('${t.id}','nombre',this.value)">
+          </div>
+          <div>
+            <div class="field-label">Módulo</div>
+            <select class="field-select" onchange="updateTemaField('${t.id}','spec',this.value)">
+              ${specs.map(s => `<option value="${s.id}" ${s.id===t.spec?'selected':''}>${s.emoji} ${s.name}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <div class="field-label">Dificultad (1-5)</div>
+            <select class="field-select" onchange="updateTemaField('${t.id}','dif',parseInt(this.value))">
+              ${[1,2,3,4,5].map(n => `<option value="${n}" ${n===t.dif?'selected':''}>${n}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <div class="field-label">Prioridad</div>
+            <select class="field-select" onchange="updateTemaField('${t.id}','prio',this.value)">
+              ${['A','B','C'].map(p => `<option value="${p}" ${p===t.prio?'selected':''}>${p}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <div class="field-label">Tiempo est. (min)</div>
+            <input class="field-input" type="number" min="10" step="5" value="${getTiempoEstimado(t)}" onchange="updateTemaField('${t.id}','timeMin',parseInt(this.value)||45)">
+          </div>
+          ${isCustomTema(t.id) ? `<div style="flex-basis:100%;"><button class="btn btn-secondary config-delete-btn" onclick="deleteCustomTema('${t.id}')">🗑 Eliminar tema</button></div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="config-back">
+      <button class="icon-btn" onclick="goTo('plan')">←</button>
+      <div class="page-title">Configuración del Temario</div>
+    </div>
+    <div class="page-sub">Cada cambio reorganiza automáticamente tu plan de estudio.</div>
+
+    <div class="card config-add-card">
+      <div class="section-label" style="margin-top:0;">Agregar módulo nuevo</div>
+      <div class="field-row field-group">
+        <div><input class="field-input" id="new-mod-name" placeholder="Nombre del módulo"></div>
+        <div style="max-width:70px;"><input class="field-input" id="new-mod-emoji" placeholder="🩹" maxlength="2"></div>
+      </div>
+      <button class="btn btn-secondary" onclick="addModulo()">+ Crear módulo</button>
+    </div>
+
+    <div class="card config-add-card">
+      <div class="section-label" style="margin-top:0;">Agregar tema nuevo</div>
+      <div class="field-group"><input class="field-input" id="new-tema-nombre" placeholder="Nombre del tema"></div>
+      <div class="field-row field-group">
+        <div>
+          <div class="field-label">Módulo</div>
+          <select class="field-select" id="new-tema-spec">${specOptions}</select>
+        </div>
+        <div>
+          <div class="field-label">Dificultad</div>
+          <select class="field-select" id="new-tema-dif">${[1,2,3,4,5].map(n=>`<option value="${n}" ${n===3?'selected':''}>${n}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="field-row field-group">
+        <div>
+          <div class="field-label">Prioridad</div>
+          <select class="field-select" id="new-tema-prio">
+            <option value="A">A</option><option value="B" selected>B</option><option value="C">C</option>
+          </select>
+        </div>
+        <div>
+          <div class="field-label">Tiempo (min)</div>
+          <input class="field-input" id="new-tema-time" type="number" min="10" step="5" value="60">
+        </div>
+      </div>
+      <button class="btn btn-secondary" onclick="addTema()">+ Agregar tema</button>
+    </div>
+
+    <div class="section-label">Temario completo (${temas.length} temas)</div>
+    ${rows}
+  `;
+}
+
+function toggleConfigTema(id) {
+  expandedConfigTemas[id] = !expandedConfigTemas[id];
+  renderScreen('config');
+}
+
+function ensureOverride(id) {
+  if (!STATE.temaOverrides[id]) STATE.temaOverrides[id] = {};
+  return STATE.temaOverrides[id];
+}
+
+function updateTemaField(id, field, value) {
+  if (isCustomTema(id)) {
+    const t = STATE.customTemas.find(x => x.id === id);
+    if (t) t[field] = value;
+  } else {
+    ensureOverride(id)[field] = value;
+  }
+  saveState();
+  showToast('✓ Tema actualizado');
+  renderScreen('config');
+}
+
+function toggleTemaActivo(id, activo) {
+  if (isCustomTema(id)) {
+    const t = STATE.customTemas.find(x => x.id === id);
+    if (t) t.activo = activo;
+  } else {
+    ensureOverride(id).activo = activo;
+  }
+  saveState();
+  renderScreen('config');
+}
+
+function deleteCustomTema(id) {
+  if (!confirm('¿Eliminar este tema permanentemente?')) return;
+  STATE.customTemas = STATE.customTemas.filter(t => t.id !== id);
+  delete STATE.temaOverrides[id];
+  if (STATE.activeTema === id) STATE.activeTema = null;
+  saveState();
+  showToast('🗑 Tema eliminado');
+  renderScreen('config');
+}
+
+function addModulo() {
+  const name = document.getElementById('new-mod-name').value.trim();
+  const emoji = document.getElementById('new-mod-emoji').value.trim() || '📚';
+  if (!name) { showToast('Escribe un nombre para el módulo'); return; }
+  const colors = ['#F5A9B8','#A8D8F0','#B8A9F0','#D8B4E2','#F5D397','#F5B89C','#A0DFC0','#9FD9E0','#E8AEDD','#D7E29B'];
+  const id = 'mod_' + Date.now();
+  STATE.customEspecialidades.push({ id, name, emoji, color: colors[Math.floor(Math.random()*colors.length)] });
+  saveState();
+  showToast('✓ Módulo creado');
+  renderScreen('config');
+}
+
+function addTema() {
+  const nombre = document.getElementById('new-tema-nombre').value.trim();
+  const spec = document.getElementById('new-tema-spec').value;
+  const dif = parseInt(document.getElementById('new-tema-dif').value);
+  const prio = document.getElementById('new-tema-prio').value;
+  const timeMin = parseInt(document.getElementById('new-tema-time').value) || 45;
+  if (!nombre) { showToast('Escribe un nombre para el tema'); return; }
+  const id = 'custom_' + Date.now();
+  STATE.customTemas.push({ id, spec, nombre, dif, prio, timeMin, deps: [], unlock: [], activo: true });
+  saveState();
+  showToast('✓ Tema agregado');
+  document.getElementById('new-tema-nombre').value = '';
+  renderScreen('config');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════════════════
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODO GUARDIA (DARK MODE)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark-mode');
+  STATE.guardiaNocturna = isDark;
+  saveState();
+  updateThemeToggleIcon();
+  showToast(isDark ? '🌙 Modo Guardia activado' : '☀️ Modo Guardia desactivado');
+}
+
+function updateThemeToggleIcon() {
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    btn.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+  }
+}
+
+function initDarkMode() {
+  if (STATE.guardiaNocturna) {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+  updateThemeToggleIcon();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CELEBRACIÓN DE CONFETI
+// ═══════════════════════════════════════════════════════════════════════════
+
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = 'block';
+
+  const colors = ['#8FDBB6', '#F7CE8A', '#F5A7AE', '#A3D4F2', '#B4A2F5', '#FFFFFF'];
+  const particles = [];
+
+  for (let i = 0; i < 150; i++) {
+    particles.push({
+      x: canvas.width / 2,
+      y: canvas.height / 2 - 50, // shoot from center
+      vx: (Math.random() - 0.5) * 16,
+      vy: (Math.random() - 0.7) * 16 - 5,
+      size: Math.random() * 8 + 5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 12,
+      opacity: 1,
+      gravity: 0.3,
+      drift: (Math.random() - 0.5) * 1.5
+    });
+  }
+
+  let animationFrameId;
+  function update() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let active = false;
+
+    particles.forEach(p => {
+      p.x += p.vx + p.drift;
+      p.y += p.vy;
+      p.vy += p.gravity;
+      p.rotation += p.rotationSpeed;
+      
+      if (p.vy > 0) {
+        p.opacity -= 0.015;
+      }
+
+      if (p.opacity > 0) {
+        active = true;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation * Math.PI / 180);
+        ctx.globalAlpha = p.opacity;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+        ctx.restore();
+      }
+    });
+
+    if (active) {
+      animationFrameId = requestAnimationFrame(update);
+    } else {
+      canvas.style.display = 'none';
+      cancelAnimationFrame(animationFrameId);
+    }
+  }
+
+  update();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PORTABILIDAD DE DATOS (UN SOLO LINK)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function exportarProgreso() {
+  try {
+    STATE.linkGenerado = true;
+    saveState();
+    const minified = JSON.stringify(STATE);
+    const encoded = btoa(unescape(encodeURIComponent(minified)));
+    const url = window.location.origin + window.location.pathname + '?data=' + encoded;
+    
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        showToast('🔗 ¡Enlace portátil copiado al portapapeles!');
+      })
+      .catch(() => {
+        // Fallback copy
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('🔗 ¡Enlace portátil copiado!');
+      });
+  } catch(e) {
+    showToast('❌ Error al generar enlace');
+    console.error(e);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VISOR MODAL "NO ENTENDÍ"
+// ═══════════════════════════════════════════════════════════════════════════
+
+let currentNePrompt = '';
+
+function openNeModal(key, label, icon) {
+  const temaId = STATE.activeTema || (getTemaDelDia() || {}).id;
+  const tema = getAllTemas().find(t => t.id === temaId) || getTemaDelDia();
+  const prompts = getNoEntendiPrompts(tema);
+  const found = prompts.find(p => p.key === key);
+  if (!found) return;
+
+  currentNePrompt = found.prompt;
+  document.getElementById('ne-modal-icon').textContent = icon;
+  document.getElementById('ne-modal-title').textContent = label;
+  document.getElementById('ne-prompt-text').textContent = found.prompt;
+  document.getElementById('ne-gemini-response').value = '';
+
+  document.getElementById('ne-modal').classList.add('open');
+}
+
+function closeNeModal() {
+  document.getElementById('ne-modal').classList.remove('open');
+}
+
+function copiarPromptModal() {
+  copyText(currentNePrompt);
+}
+
+function abrirGeminiDirecto() {
+  const url = 'https://gemini.google.com/app?q=' + encodeURIComponent(currentNePrompt);
+  window.open(url, '_blank');
+}
+
+function guardarExplicacionEnNotas() {
+  const resp = document.getElementById('ne-gemini-response').value.trim();
+  if (!resp) {
+    showToast('⚠️ Escribe o pega la explicación primero');
+    return;
+  }
+  const temaId = STATE.activeTema || (getTemaDelDia() || {}).id;
+  if (!temaId) return;
+
+  const currentNotes = STATE.notas[temaId] || '';
+  const separator = currentNotes ? '\n\n---\n💡 Explicación de IA:\n' : '💡 Explicación de IA:\n';
+  STATE.notas[temaId] = currentNotes + separator + resp;
+  saveState();
+
+  const mainTextarea = document.querySelector('.field-textarea');
+  if (mainTextarea) mainTextarea.value = STATE.notas[temaId];
+
+  showToast('💾 Explicación integrada a notas');
+  closeNeModal();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════
+
+if (!STATE.startDate) {
+  STATE.startDate = new Date().toISOString();
+  saveState();
+}
+
+getAllTemasRaw().forEach(t => {
+  if (!STATE.estados[t.id]) STATE.estados[t.id] = 'no_iniciado';
+});
+
+MEDIC_META.forEach((s, i) => { openMedicSteps[s.key] = i === 0; });
+
+initDarkMode();
+renderScreen('inicio');
+</script>
+</body>
+</html>
