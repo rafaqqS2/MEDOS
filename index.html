@@ -1015,10 +1015,29 @@ function calcularPlan() {
 
 function getPlanOrdenado() { return calcularPlan(); }
 
+function isTemaDesbloqueado(t) {
+  const temas = getAllTemas();
+  return (t.deps || []).every(d => {
+    if (!temas.some(x => x.id === d)) return true;
+    return getTemaEstado(d) === 'dominado';
+  });
+}
+
 function getTemaDelDia() {
   const plan = getPlanOrdenado();
   if (!plan.length) return null;
-  // El tema del día es siempre el primer tema pendiente (no dominado) del plan
+
+  if (STATE.especialidadActiva && STATE.especialidadActiva !== 'todas') {
+    // Buscar primer tema pendiente de la especialidad activa que ya esté desbloqueado
+    const pendienteEspecialidad = plan.find(t => t.spec === STATE.especialidadActiva && getTemaEstado(t.id) !== 'dominado' && isTemaDesbloqueado(t));
+    if (pendienteEspecialidad) return pendienteEspecialidad;
+
+    // Si no hay temas desbloqueados, mostrar el primer tema pendiente cualquiera de esa especialidad
+    const cualquierPendiente = plan.find(t => t.spec === STATE.especialidadActiva && getTemaEstado(t.id) !== 'dominado');
+    if (cualquierPendiente) return cualquierPendiente;
+  }
+
+  // Comportamiento por defecto
   const pendiente = plan.find(t => getTemaEstado(t.id) !== 'dominado');
   return pendiente || plan[plan.length - 1];
 }
@@ -1259,26 +1278,18 @@ function renderScreen(screen) {
 // RENDER: INICIO
 // ═══════════════════════════════════════════════════════════════════════════
 
+function setEspecialidadActiva(val) {
+  STATE.especialidadActiva = val;
+  saveState();
+  if (currentScreen === 'inicio') renderScreen('inicio');
+  if (currentScreen === 'plan') renderScreen('plan');
+}
+
 function renderInicio() {
-  const tema = getTemaDelDia();
-  if (!tema) {
-    return `<div class="page-title">MedOS</div><div class="card" style="text-align:center;padding:40px 16px;">No hay temas activos. Ve a Configuración del Temario para activar o agregar temas.</div>`;
-  }
-  const spec = getSpec(tema.spec);
   const allTemas = getAllTemas();
   const totalTemas = allTemas.length;
   const dominados = allTemas.filter(t => getTemaEstado(t.id) === 'dominado').length;
   const pct = totalTemas ? Math.round((dominados / totalTemas) * 100) : 0;
-
-  const unlockCount = (tema.unlock || []).filter(id => allTemas.some(x=>x.id===id)).length;
-  const whyStudy = unlockCount > 0
-    ? `Estudiar este tema desbloquea <strong>${unlockCount} tema${unlockCount>1?'s':''}</strong> que dependen de él. Es un nodo fundamental de la red.`
-    : `Tema de alta prioridad clínica. Domina el concepto central antes de avanzar a las complicaciones.`;
-
-  const medicData = STATE.medicSteps[tema.id] || {};
-  const stepsHoy = MEDIC_META.filter(s => medicData[s.key]).length;
-
-  const timeEst = `${getTiempoEstimado(tema)} min`;
 
   // Streak calculation for header
   const hoy = new Date().toISOString().split('T')[0];
@@ -1286,6 +1297,59 @@ function renderInicio() {
   const rachaVal = calcRacha();
   const rachaClass = metaHoyCompletada ? 'streak-active' : 'streak-pending';
 
+  const specsList = getAllEspecialidades();
+  const specOptions = `<option value="todas" ${STATE.especialidadActiva === 'todas' ? 'selected' : ''}>🎯 Todas las especialidades</option>` +
+    specsList.map(s => `<option value="${s.id}" ${STATE.especialidadActiva === s.id ? 'selected' : ''}>${s.emoji} ${s.name}</option>`).join('');
+
+  const activeSpecSelectorHtml = `
+    <div style="margin-bottom: 14px; display: flex; align-items: center; gap: 8px; justify-content: space-between;">
+      <div style="font-size: 11.5px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;">Especialidad:</div>
+      <select class="field-select" style="max-width: 220px; font-size: 12px; padding: 6px 10px; border-radius: 8px;" onchange="setEspecialidadActiva(this.value)">
+        ${specOptions}
+      </select>
+    </div>
+  `;
+
+  const tema = getTemaDelDia();
+  if (!tema) {
+    const isFiltered = STATE.especialidadActiva !== 'todas';
+    const noTemasMsg = isFiltered 
+      ? `No hay temas activos o pendientes desbloqueados para esta especialidad. Prueba a cambiar de Especialidad Activa.`
+      : `No hay temas activos. Ve a Configuración del Temario para activar o agregar temas.`;
+
+    return `
+      <div class="inicio-header">
+        <div class="inicio-logo">Med<span>OS</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="${rachaClass}" style="font-size:15px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:2px;" onclick="goTo('progreso')" title="Racha de estudio">
+            ${rachaVal}🔥
+          </span>
+          <div class="inicio-day-badge">DÍA ${STATE.dia} / 90</div>
+        </div>
+      </div>
+
+      <div class="ecg-line">
+        <svg width="100%" height="36" viewBox="0 0 360 36" preserveAspectRatio="none">
+          <path class="ecg-path" d="M0,18 L40,18 L50,18 L55,4 L60,32 L65,10 L72,18 L120,18 L125,18 L130,4 L135,32 L140,10 L147,18 L200,18 L205,18 L210,4 L215,32 L220,10 L227,18 L280,18 L285,18 L290,4 L295,32 L300,10 L307,18 L360,18"
+            fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      ${activeSpecSelectorHtml}
+
+      <div class="card" style="text-align:center;padding:40px 16px; font-size:13px; color:var(--text2);">${noTemasMsg}</div>
+    `;
+  }
+
+  const spec = getSpec(tema.spec);
+  const unlockCount = (tema.unlock || []).filter(id => allTemas.some(x=>x.id===id)).length;
+  const whyStudy = unlockCount > 0
+    ? `Estudiar este tema desbloquea <strong>${unlockCount} tema${unlockCount>1?'s':''}</strong> que dependen de él. Es un nodo fundamental de la red.`
+    : `Tema de alta prioridad clínica. Domina el concepto central antes de avanzar a las complicaciones.`;
+
+  const medicData = STATE.medicSteps[tema.id] || {};
+  const stepsHoy = MEDIC_META.filter(s => medicData[s.key]).length;
+  const timeEst = `${getTiempoEstimado(tema)} min`;
   const playButtonLabel = stepsHoy > 0 ? 'Continuar' : 'PLAY';
 
   return `
@@ -1305,6 +1369,8 @@ function renderInicio() {
           fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
+
+    ${activeSpecSelectorHtml}
 
     <!-- HERO CARD: ESTADO DE FLOW CON BOTÓN PLAY GIGANTE -->
     <div class="hero-card" style="text-align: center; padding: 24px 20px 20px;">
@@ -1403,12 +1469,29 @@ function renderPlan() {
   const plan = getPlanOrdenado();
   const temaDelDia = getTemaDelDia();
 
+  const specsList = getAllEspecialidades();
+  const specOptions = `<option value="todas" ${STATE.especialidadActiva === 'todas' ? 'selected' : ''}>🎯 Todas las especialidades</option>` +
+    specsList.map(s => `<option value="${s.id}" ${STATE.especialidadActiva === s.id ? 'selected' : ''}>${s.emoji} ${s.name}</option>`).join('');
+
+  const activeSpecSelectorHtml = `
+    <div style="margin-bottom: 14px; display: flex; align-items: center; gap: 8px; justify-content: space-between;">
+      <div style="font-size: 11.5px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;">Especialidad:</div>
+      <select class="field-select" style="max-width: 220px; font-size: 12px; padding: 6px 10px; border-radius: 8px;" onchange="setEspecialidadActiva(this.value)">
+        ${specOptions}
+      </select>
+    </div>
+  `;
+
   const filterBtns = ['todos','A','B','no_iniciado','en_progreso','dominado'].map(f => {
     const labels = { todos:'Todos', A:'Alta prioridad', B:'Media', no_iniciado:'No iniciado', en_progreso:'En progreso', dominado:'Dominado' };
     return `<div class="pill ${planFilter===f?'active':''}" onclick="setPlanFilter('${f}')">${labels[f]}</div>`;
   }).join('');
 
-  const sections = getAllEspecialidades().map(spec => {
+  const filteredSpecs = STATE.especialidadActiva === 'todas'
+    ? getAllEspecialidades()
+    : getAllEspecialidades().filter(s => s.id === STATE.especialidadActiva);
+
+  const sections = filteredSpecs.map(spec => {
     const temasSpec = plan.filter(t => t.spec === spec.id);
     const filtrados = temasSpec.filter(t => {
       if (planFilter === 'todos') return true;
@@ -1459,6 +1542,7 @@ function renderPlan() {
       <button class="icon-btn" onclick="goTo('config')" title="Configuración del temario">⚙︎</button>
     </div>
     <div class="page-sub">Secuenciado por dependencias — no por orden del libro</div>
+    ${activeSpecSelectorHtml}
     <div class="plan-filters">${filterBtns}</div>
     ${sections || '<div style="text-align:center;color:var(--text3);padding:40px 0;">Sin temas con este filtro</div>'}
   `;
@@ -1624,33 +1708,48 @@ function marcarDominado(temaId) {
 function renderPrompts() {
   const temaId = STATE.activeTema || (getTemaDelDia() || {}).id;
   const tema = getAllTemas().find(t => t.id === temaId) || getTemaDelDia();
-  const categorias = getPromptCategories(tema);
+  const promptsObj = getPromptCategories(tema);
 
-  const cards = categorias.map((p, i) => `
+  const renderCard = (p, type, idx) => `
     <div class="prompt-card">
       <div class="prompt-card-label"><span>${p.icon}</span> ${p.label}</div>
       <div class="prompt-card-title">${p.title}</div>
       <div class="prompt-card-preview">${p.preview}</div>
       <div style="display: flex; gap: 8px;">
-        <button class="prompt-copy-btn" onclick="copyPrompt(${i})" style="flex: 1; padding: 10px;">
-          <span>📋</span> Copiar
+        <button class="prompt-copy-btn" onclick="copyPrompt('${type}', ${idx})" style="flex: 1; padding: 10px;">
+          <span>📋</span> Copiar Prompt
         </button>
-        <button class="prompt-copy-btn" onclick="abrirGeminiPromptsTab(${i})" style="flex: 1; padding: 10px; background: var(--accent-dim); color: var(--accent2); border-color: #B4A2F555;">
+        <button class="prompt-copy-btn" onclick="abrirGeminiPromptsTab('${type}', ${idx})" style="flex: 1; padding: 10px; background: var(--accent-dim); color: var(--accent2); border-color: #B4A2F555;">
           <span>🚀</span> Gemini
         </button>
       </div>
     </div>
-  `).join('');
+  `;
 
-  window._currentPrompts = categorias;
+  const geminiCards = promptsObj.gemini.map((p, idx) => renderCard(p, 'gemini', idx)).join('');
+  const notebookCards = promptsObj.notebook.map((p, idx) => renderCard(p, 'notebook', idx)).join('');
+
+  window._currentPromptsSplit = promptsObj;
 
   return `
-    <div class="page-title">Prompts</div>
-    <div class="page-sub">Para: <strong>${tema ? tema.nombre : '—'}</strong> · listos para Gemini o NotebookLM</div>
-    ${cards}
-    <div class="card" style="background:var(--s2);border-style:dashed;margin-top:6px;">
+    <div class="page-title">Biblioteca de Prompts</div>
+    <div class="page-sub">Para: <strong>${tema ? tema.nombre : '—'}</strong></div>
+
+    <div class="section-label" style="color: var(--accent2); font-size: 11.5px; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 12px; margin-top: 10px;">
+      💬 Prompts para Gemini (Asistente Socrático)
+    </div>
+    ${geminiCards}
+
+    <div class="section-label" style="color: var(--green-ink); font-size: 11.5px; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 12px; margin-top: 24px;">
+      📚 Prompts para NotebookLM (Análisis de PDFs)
+    </div>
+    ${notebookCards}
+
+    <div class="card" style="background:var(--s2);border-style:dashed;margin-top:16px;">
       <div style="font-size:12px;color:var(--text2);line-height:1.7;">
-        💡 <strong style="color:var(--text);">Cómo usar:</strong> Copia el prompt o pulsa "Gemini" para abrir la sesión de IA. Úsalo junto con tus fuentes del tema para entender mecanismos, no memorizar respuestas.
+        💡 <strong>Guía de Uso:</strong><br>
+        • Usa <strong>Gemini</strong> para discutir interactivamente la fisiología, simulando casos y defendiendo diagnósticos de forma oral.<br>
+        • Usa <strong>NotebookLM</strong> cargando tus guías de práctica clínica y resúmenes para extraer mecanismos exactos y contrastar consensos médicos directamente de tus documentos.
       </div>
     </div>
   `;
@@ -1672,14 +1771,14 @@ function copyText(text) {
     });
 }
 
-function copyPrompt(idx) {
-  const p = window._currentPrompts?.[idx];
+function copyPrompt(type, idx) {
+  const p = window._currentPromptsSplit?.[type]?.[idx];
   if (!p) return;
   copyText(p.prompt);
 }
 
-function abrirGeminiPromptsTab(idx) {
-  const p = window._currentPrompts?.[idx];
+function abrirGeminiPromptsTab(type, idx) {
+  const p = window._currentPromptsSplit?.[type]?.[idx];
   if (!p) return;
   const url = 'https://gemini.google.com/app?q=' + encodeURIComponent(p.prompt);
   window.open(url, '_blank');
@@ -1893,6 +1992,26 @@ function renderConfig() {
 
   const specOptions = specs.map(s => `<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('');
 
+  const themeOptions = [
+    { value: 'lila', label: '🟣 Lila Clínico (Original)' },
+    { value: 'guardia', label: '🌙 Guardia Nocturna (Oscuro)' },
+    { value: 'menta', label: '🟢 Menta Quirófano (Verde Suave)' }
+  ].map(opt => `<option value="${opt.value}" ${STATE.temaVisual === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('');
+
+  const themeSelectorHtml = `
+    <div class="card" style="margin-bottom: 16px; padding: 16px;">
+      <div class="section-label" style="margin-top:0;">Tema Visual</div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="font-size: 12.5px; color: var(--text2); line-height: 1.5; margin-bottom: 6px;">
+          Selecciona una paleta adaptada para mitigar la fatiga visual según tu entorno.
+        </div>
+        <select class="field-select" style="font-size: 13px; padding: 10px;" onchange="setTemaVisual(this.value)">
+          ${themeOptions}
+        </select>
+      </div>
+    </div>
+  `;
+
   const rows = temas.map(t => {
     const spec = getSpec(t.spec);
     const isExpanded = !!expandedConfigTemas[t.id];
@@ -1947,6 +2066,8 @@ function renderConfig() {
       <div class="page-title">Configuración del Temario</div>
     </div>
     <div class="page-sub">Cada cambio reorganiza automáticamente tu plan de estudio.</div>
+
+    ${themeSelectorHtml}
 
     <div class="card config-add-card">
       <div class="section-label" style="margin-top:0;">Agregar módulo nuevo</div>
@@ -2079,28 +2200,16 @@ function showToast(msg) {
 // MODO GUARDIA (DARK MODE)
 // ═══════════════════════════════════════════════════════════════════════════
 
-function toggleDarkMode() {
-  const isDark = document.body.classList.toggle('dark-mode');
-  STATE.guardiaNocturna = isDark;
+function setTemaVisual(themeName) {
+  STATE.temaVisual = themeName;
   saveState();
-  updateThemeToggleIcon();
-  showToast(isDark ? '🌙 Modo Guardia activado' : '☀️ Modo Guardia desactivado');
-}
-
-function updateThemeToggleIcon() {
-  const btn = document.getElementById('theme-toggle');
-  if (btn) {
-    btn.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
-  }
+  applyTheme();
+  if (currentScreen === 'config') renderScreen('config');
+  showToast(`Tema cambiado: ${themeName === 'guardia' ? 'Guardia Nocturna 🌙' : themeName === 'menta' ? 'Menta Quirófano 🟢' : 'Lila Clínico 🟣'}`);
 }
 
 function initDarkMode() {
-  if (STATE.guardiaNocturna) {
-    document.body.classList.add('dark-mode');
-  } else {
-    document.body.classList.remove('dark-mode');
-  }
-  updateThemeToggleIcon();
+  applyTheme();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
