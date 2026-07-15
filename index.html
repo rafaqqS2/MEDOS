@@ -173,6 +173,10 @@ body.dark-mode {
   opacity: 0.5;
   animation: racha-pulse 2s infinite;
 }
+.streak-inactive {
+  color: var(--text3) !important;
+  opacity: 0.35;
+}
 @keyframes racha-glow {
   from { text-shadow: 0 0 6px rgba(255, 90, 25, 0.4), 0 0 12px rgba(152, 133, 238, 0.3); }
   to { text-shadow: 0 0 14px rgba(255, 90, 25, 0.8), 0 0 24px rgba(152, 133, 238, 0.6); }
@@ -936,6 +940,26 @@ if (urlParams.has('data')) {
 // Asegurar que existan todas las llaves si se cargó un estado viejo
 for (const k in DEFAULT_STATE) if (!(k in STATE)) STATE[k] = JSON.parse(JSON.stringify(DEFAULT_STATE[k]));
 
+if (!STATE.startDate) {
+  STATE.startDate = new Date().toISOString().split('T')[0];
+}
+
+function getDiaActual() {
+  if (!STATE.startDate) {
+    STATE.startDate = new Date().toISOString().split('T')[0];
+  }
+  const start = new Date(STATE.startDate + 'T00:00:00');
+  const today = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
+  const diffTime = today - start;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const dia = diffDays + 1;
+  return Math.min(Math.max(dia, 1), 90);
+}
+
+// Inicializar día al cargar
+STATE.dia = getDiaActual();
+saveState();
+
 function saveState() {
   localStorage.setItem('medos4_state', JSON.stringify(STATE));
 }
@@ -1122,29 +1146,13 @@ const MEDIC_META = [
 
 function getPromptCategories(tema) {
   const t = tema?.nombre || '[TEMA ACTUAL]';
-  return [
-    {
-      key: 'comprension', icon: '🧩', label: 'Comprensión',
-      title: `Explícame ${t} desde la fisiología`,
-      preview: 'Construye el mecanismo desde el principio fisiológico hasta la manifestación clínica.',
-      prompt: `Actúa como un internista que enseña desde la fisiopatología, no desde la clínica.
-
-Quiero entender "${t}" siguiendo exactamente esta estructura:
-
-1. PRINCIPIO FISIOLÓGICO ROTO: ¿Qué función normal del organismo se altera? Explícame cómo funciona normalmente antes de explicar qué falla.
-2. EVENTO INICIAL: ¿Cuál es la primera alteración? ¿Por qué ocurre?
-3. COMPENSACIONES: ¿Cómo intenta el organismo restablecer la homeostasis? Separa cuáles son útiles a corto plazo y cuáles se vuelven maladaptativas.
-4. DESCOMPENSACIÓN: ¿Por qué la compensación deja de funcionar?
-5. MANIFESTACIONES: Explícame cada síntoma y signo como consecuencia directa de un mecanismo fisiológico específico. No listas. Mecanismos.
-6. PARADOJA: Dame la paradoja clínica más importante de esta enfermedad y explícala desde la fisiopatología.
-
-No uses listas de síntomas para memorizar. Quiero entender, no memorizar.`
-    },
-    {
-      key: 'socratico', icon: '🗣️', label: 'Tutor socrático',
-      title: `Guíame con preguntas sobre ${t}`,
-      preview: 'La IA no da respuestas directas: te hace preguntas hasta que razones la respuesta tú mismo.',
-      prompt: `Actúa como un tutor socrático de medicina interna. Vamos a estudiar "${t}".
+  return {
+    gemini: [
+      {
+        key: 'socratico', icon: '🗣️', label: 'Tutor socrático',
+        title: `Guíame con preguntas sobre ${t}`,
+        preview: 'La IA no da respuestas directas: te hace preguntas hasta que razones la respuesta tú mismo.',
+        prompt: `Actúa como un tutor socrático de medicina interna. Vamos a estudiar "${t}".
 
 Reglas estrictas:
 1. Nunca me des la respuesta directamente.
@@ -1154,12 +1162,12 @@ Reglas estrictas:
 5. Al final de la sesión, resume qué conceptos dominé y cuáles necesito repasar.
 
 Empieza con la primera pregunta sobre el principio fisiológico central de "${t}".`
-    },
-    {
-      key: 'caso', icon: '🏥', label: 'Caso clínico',
-      title: `Caso clínico de ${t}`,
-      preview: 'Un caso realista para practicar razonamiento diagnóstico paso a paso.',
-      prompt: `Genera un caso clínico realista de "${t}" para practicar razonamiento diagnóstico, con este formato:
+      },
+      {
+        key: 'caso', icon: '🏥', label: 'Caso clínico interactivo',
+        title: `Caso clínico paso a paso de ${t}`,
+        preview: 'Un caso realista para practicar razonamiento diagnóstico paso a paso.',
+        prompt: `Genera un caso clínico realista de "${t}" para practicar razonamiento diagnóstico, con este formato:
 
 1. Preséntame solo el motivo de consulta y datos generales del paciente.
 2. Espera mi respuesta antes de darme más datos (anamnesis, luego examen físico, luego laboratorios, luego imágenes).
@@ -1167,56 +1175,12 @@ Empieza con la primera pregunta sobre el principio fisiológico central de "${t}
 4. Al final, revela el diagnóstico correcto y explica el razonamiento fisiopatológico completo, señalando en qué paso mi razonamiento fue correcto o se desvió.
 
 No me des toda la información de una vez. Simula una consulta real.`
-    },
-    {
-      key: 'ddx', icon: '🔍', label: 'Diagnóstico diferencial',
-      title: `¿Cuándo ${t} parece otra cosa?`,
-      preview: 'Diferencial basado en fisiopatología, no en listas memorizadas.',
-      prompt: `Estoy estudiando "${t}". Explícame los diagnósticos diferenciales más importantes de esta forma:
-
-Para cada diagnóstico diferencial:
-1. ¿Por qué clínicamente se parece a "${t}"? ¿Qué mecanismo fisiológico comparten?
-2. ¿En qué principio fisiológico dejan de parecerse?
-3. ¿Cuál es el hallazgo clave que los diferencia fisiopatológicamente?
-
-No quiero listas. Quiero entender por qué se parecen y por qué no.
-Máximo 5 diagnósticos diferenciales, bien explicados.`
-    },
-    {
-      key: 'tratamiento', icon: '💊', label: 'Tratamiento desde la fisiopatología',
-      title: `Tratamiento de ${t} desde la cascada`,
-      preview: 'Cada fármaco interrumpe la cascada fisiopatológica en un punto específico.',
-      prompt: `Para "${t}", explícame el tratamiento respondiendo únicamente:
-¿En qué punto exacto de la cascada fisiopatológica interrumpe este fármaco?
-
-Para cada tratamiento principal:
-1. El mecanismo de la enfermedad que bloquea o corrige.
-2. Por qué ese punto de la cascada es estratégico.
-3. La paradoja o contraintuitividad de este tratamiento (si existe).
-4. Por qué funciona a largo plazo aunque parezca contraproducente a corto plazo.
-
-No quiero protocolos ni dosis de memoria. Quiero entender el razonamiento detrás de cada decisión.`
-    },
-    {
-      key: 'feynman', icon: '✏️', label: 'Método Feynman',
-      title: `Evalúa mi explicación de ${t}`,
-      preview: 'Escribes tu propia explicación simple y la IA detecta huecos de comprensión.',
-      prompt: `Voy a explicarte "${t}" con mis propias palabras, como si se lo explicara a alguien sin conocimientos médicos.
-
-Cuando termine mi explicación, actúa como un evaluador estricto:
-1. Señala qué partes de mi explicación fueron claras y correctas.
-2. Señala en qué partes usé jerga médica en vez de explicar el mecanismo real (eso indica que no lo entendí del todo).
-3. Señala cualquier hueco lógico o paso que salté sin darme cuenta.
-4. Hazme 2-3 preguntas de seguimiento para forzarme a llenar esos huecos.
-
-Aquí está mi explicación de "${t}":
-[ESCRIBE AQUÍ TU EXPLICACIÓN EN TUS PROPIAS PALABRAS]`
-    },
-    {
-      key: 'examen', icon: '🎤', label: 'Examen oral',
-      title: `Examíname oralmente sobre ${t}`,
-      preview: 'Simula un examen oral como si fueras el médico tratante evaluando a un interno.',
-      prompt: `Actúa como un médico internista tratante tomándome un examen oral sobre "${t}", como se hace en el pase de visita hospitalario.
+      },
+      {
+        key: 'examen', icon: '🎤', label: 'Examen oral',
+        title: `Examíname oralmente sobre ${t}`,
+        preview: 'Simula un examen oral como si fueras el médico tratante evaluando a un interno.',
+        prompt: `Actúa como un médico internista tratante tomándome un examen oral sobre "${t}", como se hace en el pase de visita hospitalario.
 
 Reglas:
 1. Hazme preguntas una por una, empezando por fisiopatología y subiendo en dificultad hacia manejo clínico.
@@ -1225,8 +1189,46 @@ Reglas:
 4. Al final, dame una evaluación honesta: qué tan preparado estoy para manejar un paciente real con "${t}", en escala de 1 a 10, y qué debo reforzar.
 
 Empieza con la primera pregunta.`
-    },
-  ];
+      }
+    ],
+    notebook: [
+      {
+        key: 'core_pdf', icon: '📄', label: 'Fisiopatología core del PDF',
+        title: 'Extrae el mecanismo central de mis textos',
+        preview: 'Pídele a NotebookLM que construya la cascada lógica basándose en tus fuentes cargadas.',
+        prompt: `Basándote únicamente en los documentos cargados en esta libreta, extrae y estructura la fisiopatología de "${t}":
+
+1. PRINCIPIO FISIOLÓGICO ROTO: ¿Qué función normal describe el texto que se altera?
+2. EVENTO INICIAL Y DESENCADENANTES: Según las fuentes, ¿cuál es el primer paso en la fisiopatología?
+3. COMPENSACIÓN Y DESCOMPENSACIÓN: Lista los mecanismos compensatorios y explica cuándo fallan según el material.
+4. CORRELACIÓN CLÍNICO-FISIOLÓGICA: Vincula los signos/síntomas del texto con sus mecanismos explicativos.
+
+No agregues información externa. Cíñete estrictamente a las fuentes proporcionadas.`
+      },
+      {
+        key: 'contradicciones', icon: '⚖️', label: 'Contradicciones entre guías',
+        title: 'Sintetiza discrepancias entre fuentes y guías',
+        preview: 'NotebookLM busca desacuerdos en manejo o diagnóstico entre las fuentes cargadas.',
+        prompt: `Analiza las fuentes de esta libreta para identificar y sintetizar cualquier contradicción, discrepancia o diferencia de criterio respecto a "${t}":
+
+1. ¿Qué guías, autores o documentos difieren en el diagnóstico o tratamiento de esta patología?
+2. ¿Cuáles son los puntos específicos del desacuerdo (ej. criterios de severidad, umbrales de laboratorio, indicaciones terapéuticas)?
+3. ¿Qué justificación da cada fuente para su respectiva postura?
+
+Resume las diferencias en una tabla comparativa si es posible.`
+      },
+      {
+        key: 'cruzadas', icon: '🔗', label: 'Guías de estudio cruzadas',
+        title: 'Crea conexiones con otros temas del material',
+        preview: 'Establece correlaciones horizontales entre este tema y otros presentes en tus PDFs.',
+        prompt: `Basándote en el material cargado en la libreta, elabora una guía de estudio cruzada para "${t}":
+
+1. CONEXIONES HORIZONTALES: ¿Con qué otras patologías del material comparte mecanismos fisiopatológicos o manifestaciones similares?
+2. DIAGNÓSTICO DIFERENCIAL INTEGRAL: Explica cómo diferenciar esta patología de las otras descritas en tus fuentes, basándote en los hallazgos patognomónicos del texto.
+3. CONFLICTOS DE TRATAMIENTO: ¿Cuándo el manejo de "${t}" podría complicar otra patología descrita en las fuentes?`
+      }
+    ]
+  };
 }
 
 // Prompts para el botón "No entendí" — reabordar el tema desde otro enfoque
@@ -1264,6 +1266,7 @@ function goTo(screen) {
 }
 
 function renderScreen(screen) {
+  STATE.dia = getDiaActual();
   const el = document.getElementById('s-' + screen);
   if (!el) return;
   if (screen === 'inicio')    el.innerHTML = renderInicio();
@@ -1295,7 +1298,7 @@ function renderInicio() {
   const hoy = new Date().toISOString().split('T')[0];
   const metaHoyCompletada = (STATE.heatmap[hoy] || 0) > 0;
   const rachaVal = calcRacha();
-  const rachaClass = metaHoyCompletada ? 'streak-active' : 'streak-pending';
+  const rachaClass = metaHoyCompletada ? 'streak-active' : (rachaVal > 0 ? 'streak-pending' : 'streak-inactive');
 
   const specsList = getAllEspecialidades();
   const specOptions = `<option value="todas" ${STATE.especialidadActiva === 'todas' ? 'selected' : ''}>🎯 Todas las especialidades</option>` +
@@ -1446,7 +1449,13 @@ function abrirSesion() {
 function replanificarSemana() {
   const completadosReales = (STATE.completados || []).length;
   const diaAnterior = STATE.dia;
-  STATE.dia = Math.min(completadosReales + 1, 90);
+  
+  // Ajustar startDate para que hoy corresponda al día (completadosReales + 1)
+  const startNew = new Date();
+  startNew.setDate(startNew.getDate() - completadosReales);
+  STATE.startDate = startNew.toISOString().split('T')[0];
+  STATE.dia = getDiaActual();
+  
   saveState();
   if (STATE.dia === diaAnterior) {
     showToast('✓ El plan ya estaba al día');
@@ -1690,7 +1699,7 @@ function marcarDominado(temaId) {
   if (!STATE.completados.includes(temaId)) STATE.completados.push(temaId);
   const hoy = new Date().toISOString().split('T')[0];
   STATE.heatmap[hoy] = (STATE.heatmap[hoy] || 0) + 1;
-  STATE.dia = Math.min(STATE.dia + 1, 90);
+  STATE.dia = getDiaActual();
   STATE.activeTema = null;
   saveState();
   
@@ -1789,14 +1798,33 @@ function abrirGeminiPromptsTab(type, idx) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function calcRacha() {
+  const hoyStr = new Date().toISOString().split('T')[0];
+  const ayerDate = new Date();
+  ayerDate.setDate(ayerDate.getDate() - 1);
+  const ayerStr = ayerDate.toISOString().split('T')[0];
+
+  const tieneHoy = (STATE.heatmap[hoyStr] || 0) > 0;
+  const tieneAyer = (STATE.heatmap[ayerStr] || 0) > 0;
+
+  if (!tieneHoy && !tieneAyer) {
+    return 0;
+  }
+
   let racha = 0;
   let d = new Date();
+  
+  if (!tieneHoy && tieneAyer) {
+    d.setDate(d.getDate() - 1);
+  }
+
   while (true) {
     const key = d.toISOString().split('T')[0];
     if ((STATE.heatmap[key] || 0) > 0) {
       racha++;
       d.setDate(d.getDate() - 1);
-    } else break;
+    } else {
+      break;
+    }
   }
   return racha;
 }
@@ -1851,7 +1879,7 @@ function renderProgreso() {
 
   const hoy = new Date().toISOString().split('T')[0];
   const metaHoyCompletada = (STATE.heatmap[hoy] || 0) > 0;
-  const rachaClass = metaHoyCompletada ? 'streak-active' : 'streak-pending';
+  const rachaClass = metaHoyCompletada ? 'streak-active' : (racha > 0 ? 'streak-pending' : 'streak-inactive');
 
   const fuerteHtml = fuerte ? `
     <div class="spec-strength-row">
@@ -1973,7 +2001,7 @@ function renderProgreso() {
       <button class="btn btn-primary" onclick="exportarProgreso()" style="font-size:13px; padding: 12px;">
         🔗 Generar Link Portátil
       </button>
-      <button class="btn btn-secondary" style="font-size:13px; padding: 12px;" onclick="if(confirm('¿Reiniciar TODO el progreso? Esto no borra tu temario personalizado.')){STATE.dia=1;STATE.completados=[];STATE.estados={};STATE.medicSteps={};STATE.notas={};STATE.heatmap={};STATE.activeTema=null;saveState();goTo('inicio');}">
+      <button class="btn btn-secondary" style="font-size:13px; padding: 12px;" onclick="if(confirm('¿Reiniciar TODO el progreso? Esto no borra tu temario personalizado.')){STATE.startDate=null;STATE.dia=1;STATE.completados=[];STATE.estados={};STATE.medicSteps={};STATE.notas={};STATE.heatmap={};STATE.activeTema=null;saveState();goTo('inicio');}">
         Reiniciar progreso
       </button>
     </div>
