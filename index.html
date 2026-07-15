@@ -92,17 +92,6 @@ body.dark-mode {
   --blue-ink:  #A3D4F2;
 }
 
-/* ── MODO GUARDIA SWITCH ────────────────────────────────────────────────── */
-.theme-toggle-btn {
-  position: absolute; top: 16px; right: 16px; z-index: 150;
-  width: 36px; height: 36px; border-radius: 50%;
-  background: var(--s1); border: 1px solid var(--border);
-  color: var(--text); font-size: 16px;
-  display: flex; align-items: center; justify-content: center;
-  transition: all var(--trans);
-  box-shadow: 0 2px 8px rgba(152, 133, 238, 0.15);
-}
-.theme-toggle-btn:active { transform: scale(0.9); }
 
 /* ── ECG DYNAMIC STROKE ─────────────────────────────────────────────────── */
 .ecg-path {
@@ -717,7 +706,6 @@ input, textarea, select { font-family: inherit; }
 </head>
 <body>
 <div id="app">
-  <button class="theme-toggle-btn" id="theme-toggle" onclick="toggleDarkMode()" title="Modo Guardia">🌙</button>
 
   <!-- SCREENS -->
   <div id="s-inicio" class="screen active"></div>
@@ -735,14 +723,14 @@ input, textarea, select { font-family: inherit; }
     <button class="nav-btn" data-screen="plan" onclick="goTo('plan')">
       <span class="icon">◫</span>Mi Plan
     </button>
-    <button class="nav-btn" data-screen="tema" onclick="goTo('tema')">
-      <span class="icon">◈</span>Tema
-    </button>
     <button class="nav-btn" data-screen="prompts" onclick="goTo('prompts')">
       <span class="icon">◎</span>Prompts
     </button>
     <button class="nav-btn" data-screen="progreso" onclick="goTo('progreso')">
       <span class="icon">◉</span>Progreso
+    </button>
+    <button class="nav-btn" data-screen="config" onclick="goTo('config')">
+      <span class="icon">⚙︎</span>Ajustes
     </button>
   </nav>
 
@@ -940,20 +928,33 @@ if (urlParams.has('data')) {
 // Asegurar que existan todas las llaves si se cargó un estado viejo
 for (const k in DEFAULT_STATE) if (!(k in STATE)) STATE[k] = JSON.parse(JSON.stringify(DEFAULT_STATE[k]));
 
-if (!STATE.startDate) {
+function isValidDateStr(str) {
+  if (!str || typeof str !== 'string') return false;
+  const reg = /^\d{4}-\d{2}-\d{2}$/;
+  if (!reg.test(str)) return false;
+  const d = new Date(str + 'T00:00:00');
+  return !isNaN(d.getTime());
+}
+
+if (!isValidDateStr(STATE.startDate)) {
   STATE.startDate = new Date().toISOString().split('T')[0];
 }
 
 function getDiaActual() {
-  if (!STATE.startDate) {
+  if (!isValidDateStr(STATE.startDate)) {
     STATE.startDate = new Date().toISOString().split('T')[0];
   }
   const start = new Date(STATE.startDate + 'T00:00:00');
   const today = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
-  const diffTime = today - start;
+  let diffTime = today.getTime() - start.getTime();
+  if (isNaN(diffTime)) {
+    STATE.startDate = new Date().toISOString().split('T')[0];
+    diffTime = 0;
+  }
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   const dia = diffDays + 1;
-  return Math.min(Math.max(dia, 1), 90);
+  const clampedDia = Math.min(Math.max(dia, 1), 90);
+  return isNaN(clampedDia) ? 1 : clampedDia;
 }
 
 // Inicializar día al cargar
@@ -1193,39 +1194,34 @@ Empieza con la primera pregunta.`
     ],
     notebook: [
       {
-        key: 'core_pdf', icon: '📄', label: 'Fisiopatología core del PDF',
-        title: 'Extrae el mecanismo central de mis textos',
-        preview: 'Pídele a NotebookLM que construya la cascada lógica basándose en tus fuentes cargadas.',
-        prompt: `Basándote únicamente en los documentos cargados en esta libreta, extrae y estructura la fisiopatología de "${t}":
+        key: 'detractor', icon: '⚖️', label: 'El Detractor Clínico',
+        title: 'Inconsistencias y Vacíos de Evidencia',
+        preview: 'Busca contradicciones terapéuticas o vacíos clínicos en los textos cargados.',
+        prompt: `Analiza de forma crítica los textos y guías cargadas en esta libreta en busca de inconsistencias, contradicciones terapéuticas o vacíos de evidencia científica respecto a "${t}":
 
-1. PRINCIPIO FISIOLÓGICO ROTO: ¿Qué función normal describe el texto que se altera?
-2. EVENTO INICIAL Y DESENCADENANTES: Según las fuentes, ¿cuál es el primer paso en la fisiopatología?
-3. COMPENSACIÓN Y DESCOMPENSACIÓN: Lista los mecanismos compensatorios y explica cuándo fallan según el material.
-4. CORRELACIÓN CLÍNICO-FISIOLÓGICA: Vincula los signos/síntomas del texto con sus mecanismos explicativos.
-
-No agregues información externa. Cíñete estrictamente a las fuentes proporcionadas.`
+1. CONTRADICCIONES: ¿En qué puntos de diagnóstico o tratamiento difieren las fuentes entre sí (ej. dosis, criterios de egreso, escalas de severidad)?
+2. VACÍOS DE EVIDENCIA: ¿Qué decisiones clínicas sobre "${t}" se plantean en los textos pero carecen de una recomendación fuerte o consenso absoluto según los propios autores?
+3. COMPARACIÓN: Elabora un cuadro comparativo donde se evidencie qué guía/fuente propone qué alternativa y su nivel de evidencia.`
       },
       {
-        key: 'contradicciones', icon: '⚖️', label: 'Contradicciones entre guías',
-        title: 'Sintetiza discrepancias entre fuentes y guías',
-        preview: 'NotebookLM busca desacuerdos en manejo o diagnóstico entre las fuentes cargadas.',
-        prompt: `Analiza las fuentes de esta libreta para identificar y sintetizar cualquier contradicción, discrepancia o diferencia de criterio respecto a "${t}":
+        key: 'molecular', icon: '🔬', label: 'Fisiopatología Molecular',
+        title: 'Mecanismo Molecular y Celular Oculto',
+        preview: 'Extrae los procesos bioquímicos a nivel molecular y celular de tus fuentes.',
+        prompt: `Realiza una inmersión profunda a nivel molecular y celular sobre "${t}" basándote exclusivamente en tus fuentes:
 
-1. ¿Qué guías, autores o documentos difieren en el diagnóstico o tratamiento de esta patología?
-2. ¿Cuáles son los puntos específicos del desacuerdo (ej. criterios de severidad, umbrales de laboratorio, indicaciones terapéuticas)?
-3. ¿Qué justificación da cada fuente para su respectiva postura?
-
-Resume las diferencias en una tabla comparativa si es posible.`
+1. MECANISMO MOLECULAR: ¿Qué cascada de señalización, receptores, canales, enzimas o mediadores inflamatorios se mencionan específicamente como alterados?
+2. RELEVANCIA CLÍNICA: Explica cómo este desarreglo a nivel subcelular conduce de forma directa a la presentación macroscópica de la enfermedad.
+3. DEFENSA CLÍNICA: Redacta un párrafo corto y sumamente preciso que pueda utilizar para defender fisiopatológicamente la patología frente al médico adjunto del servicio.`
       },
       {
-        key: 'cruzadas', icon: '🔗', label: 'Guías de estudio cruzadas',
-        title: 'Crea conexiones con otros temas del material',
-        preview: 'Establece correlaciones horizontales entre este tema y otros presentes en tus PDFs.',
-        prompt: `Basándote en el material cargado en la libreta, elabora una guía de estudio cruzada para "${t}":
+        key: 'perla', icon: '💎', label: 'La Perla Oculta',
+        title: 'Dato Atípico y Paradojas Clínicas',
+        preview: 'Encuentra las paradojas clínicas que suelen preguntar en los pases de visita.',
+        prompt: `Explora las fuentes cargadas en la libreta para extraer la "Perla Clínica" (el dato más atípico, infrecuente o contraintuitivo) sobre "${t}":
 
-1. CONEXIONES HORIZONTALES: ¿Con qué otras patologías del material comparte mecanismos fisiopatológicos o manifestaciones similares?
-2. DIAGNÓSTICO DIFERENCIAL INTEGRAL: Explica cómo diferenciar esta patología de las otras descritas en tus fuentes, basándote en los hallazgos patognomónicos del texto.
-3. CONFLICTOS DE TRATAMIENTO: ¿Cuándo el manejo de "${t}" podría complicar otra patología descrita en las fuentes?`
+1. LA PARADOJA: ¿Qué manifestación, efecto adverso raro o respuesta terapéutica contradice la lógica común de la patología según el texto?
+2. PREGUNTA DE PASE: Elabora 3 preguntas de alta complejidad y agudeza clínica basadas en estos detalles atípicos, del tipo que los médicos adjuntos suelen preguntar para evaluar la comprensión profunda de los internos.
+3. LA RESPUESTA: Proporciona las respuestas exactas referenciando la página o sección de tus fuentes.`
       }
     ]
   };
@@ -1286,6 +1282,7 @@ function setEspecialidadActiva(val) {
   saveState();
   if (currentScreen === 'inicio') renderScreen('inicio');
   if (currentScreen === 'plan') renderScreen('plan');
+  if (currentScreen === 'config') renderScreen('config');
 }
 
 function renderInicio() {
@@ -1872,7 +1869,10 @@ function renderProgreso() {
   const temas = getAllTemas();
   const totalTemas = temas.length;
   const dominados = temas.filter(t => getTemaEstado(t.id) === 'dominado').length;
-  const diasRestantes = Math.max(90 - STATE.dia + 1, 0);
+  
+  const rawDiasRestantes = 90 - STATE.dia + 1;
+  const diasRestantes = isNaN(rawDiasRestantes) ? 90 : Math.max(rawDiasRestantes, 0);
+  
   const racha = calcRacha();
   const horas = calcHorasEstudiadas();
   const { fuerte, debil } = calcEspecialidadesFuerteDebil();
@@ -1880,6 +1880,51 @@ function renderProgreso() {
   const hoy = new Date().toISOString().split('T')[0];
   const metaHoyCompletada = (STATE.heatmap[hoy] || 0) > 0;
   const rachaClass = metaHoyCompletada ? 'streak-active' : (racha > 0 ? 'streak-pending' : 'streak-inactive');
+
+  const pctHomeostasis = totalTemas ? Math.round((dominados / totalTemas) * 100) : 0;
+
+  const planActivo = getPlanOrdenado();
+  let totalConexiones = 0;
+  let conexionesActivas = 0;
+  planActivo.forEach(t => {
+    const linksCount = (t.unlock || []).filter(uId => planActivo.some(x => x.id === uId)).length;
+    totalConexiones += linksCount;
+    if (getTemaEstado(t.id) === 'dominado') {
+      conexionesActivas += linksCount;
+    }
+  });
+
+  const homeostasisHtml = `
+    <div class="card" style="margin-bottom: 16px; padding: 16px; border: 1px solid var(--border);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+        <span style="font-size:12.5px; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px;">Medidor de Homeostasis</span>
+        <span style="font-size:15px; font-weight:800; color:var(--accent2);">${pctHomeostasis}%</span>
+      </div>
+      <div style="height: 10px; background: var(--s1); border-radius: 5px; overflow: hidden; border: 1px solid var(--border);">
+        <div style="height: 100%; width: ${pctHomeostasis}%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 5px; transition: width 0.6s ease-out;"></div>
+      </div>
+      <div style="font-size: 11px; color: var(--text3); margin-top: 6px;">
+        ${dominados} de ${totalTemas} temas dominados y estabilizados en tu plan de 90 días.
+      </div>
+    </div>
+  `;
+
+  const sinapsisHtml = `
+    <div class="card" style="margin-bottom: 16px; padding: 16px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <div style="flex: 1;">
+        <div style="font-size:12.5px; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px; margin-bottom: 4px;">Densidad de Sinapsis</div>
+        <div style="font-size:11px; color: var(--text3); line-height: 1.4;">
+          Conexiones y dependencias clínicas desbloqueadas de la red de estudio.
+        </div>
+      </div>
+      <div style="text-align: right; min-width: 90px;">
+        <div style="font-size: 19px; font-weight: 800; color: var(--green-ink); text-shadow: 0 0 8px rgba(143, 219, 182, 0.25);">
+          ${conexionesActivas} <span style="font-size:12px; color:var(--text3); font-weight:400;">/ ${totalConexiones}</span>
+        </div>
+        <div style="font-size: 9px; font-weight: 700; color: var(--text2); letter-spacing: 0.5px; text-transform: uppercase;">Conexiones</div>
+      </div>
+    </div>
+  `;
 
   const fuerteHtml = fuerte ? `
     <div class="spec-strength-row">
@@ -1902,7 +1947,7 @@ function renderProgreso() {
     </div>` : '';
 
   const sinDatos = (!fuerte && !debil) ? `
-    <div class="card" style="text-align:center;color:var(--text3);font-size:13px;">
+    <div class="card" style="text-align:center;color:var(--text3);font-size:13px;padding: 16px;">
       Domina al menos un tema para ver tu especialidad más fuerte y más débil.
     </div>` : '';
 
@@ -1963,10 +2008,10 @@ function renderProgreso() {
   `;
 
   return `
-    <div class="page-title">Progreso</div>
-    <div class="page-sub">90 días de preparación</div>
+    <div class="page-title">Mi Progreso</div>
+    <div class="page-sub">Panel de Desempeño Clínico</div>
 
-    <div class="progress-big-grid">
+    <div class="progress-big-grid" style="margin-bottom: 16px;">
       <div class="progress-big-card">
         <div class="progress-big-num">${horas.toFixed(1)}h</div>
         <div class="progress-big-label">Horas estudiadas</div>
@@ -1976,14 +2021,13 @@ function renderProgreso() {
         <div class="progress-big-label">Racha (días)</div>
       </div>
       <div class="progress-big-card">
-        <div class="progress-big-num" style="color:var(--green-ink);">${dominados}/${totalTemas}</div>
-        <div class="progress-big-label">Temas completados</div>
-      </div>
-      <div class="progress-big-card">
-        <div class="progress-big-num">${diasRestantes}</div>
+        <div class="progress-big-num" style="color:var(--accent2);">${diasRestantes}</div>
         <div class="progress-big-label">Días restantes</div>
       </div>
     </div>
+
+    ${homeostasisHtml}
+    ${sinapsisHtml}
 
     <!-- SISTEMA DE LOGROS / MEDALLAS -->
     <div class="section-label">Medallas de Logros</div>
@@ -1991,7 +2035,7 @@ function renderProgreso() {
       ${medalsHtml}
     </div>
 
-    <div class="section-label">Especialidades</div>
+    <div class="section-label">Rendimiento por Especialidad</div>
     ${fuerteHtml}${debilHtml}${sinDatos}
 
     <!-- BITÁCORA DE INSIGHTS -->
@@ -1999,10 +2043,10 @@ function renderProgreso() {
 
     <div style="margin-top:20px; display: flex; flex-direction: column; gap: 8px;">
       <button class="btn btn-primary" onclick="exportarProgreso()" style="font-size:13px; padding: 12px;">
-        🔗 Generar Link Portátil
+        🔗 Generar Enlace Portátil
       </button>
       <button class="btn btn-secondary" style="font-size:13px; padding: 12px;" onclick="if(confirm('¿Reiniciar TODO el progreso? Esto no borra tu temario personalizado.')){STATE.startDate=null;STATE.dia=1;STATE.completados=[];STATE.estados={};STATE.medicSteps={};STATE.notas={};STATE.heatmap={};STATE.activeTema=null;saveState();goTo('inicio');}">
-        Reiniciar progreso
+        Reiniciar progreso del plan
       </button>
     </div>
   `;
@@ -2020,6 +2064,23 @@ function renderConfig() {
 
   const specOptions = specs.map(s => `<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('');
 
+  const selectSpecOptions = `<option value="todas" ${STATE.especialidadActiva === 'todas' ? 'selected' : ''}>🎯 Todas las especialidades (Plan completo)</option>` +
+    specs.map(s => `<option value="${s.id}" ${STATE.especialidadActiva === s.id ? 'selected' : ''}>${s.emoji} ${s.name}</option>`).join('');
+
+  const specialtySelectorCardHtml = `
+    <div class="card" style="margin-bottom: 16px; padding: 16px;">
+      <div class="section-label" style="margin-top:0;">Especialidad Enfocada</div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="font-size: 12.5px; color: var(--text2); line-height: 1.5; margin-bottom: 6px;">
+          Fija una especialidad para priorizarla en tu pantalla de Inicio y filtrar tu Plan de estudio esta semana.
+        </div>
+        <select class="field-select" style="font-size: 13px; padding: 10px;" onchange="setEspecialidadActiva(this.value)">
+          ${selectSpecOptions}
+        </select>
+      </div>
+    </div>
+  `;
+
   const themeOptions = [
     { value: 'lila', label: '🟣 Lila Clínico (Original)' },
     { value: 'guardia', label: '🌙 Guardia Nocturna (Oscuro)' },
@@ -2031,7 +2092,7 @@ function renderConfig() {
       <div class="section-label" style="margin-top:0;">Tema Visual</div>
       <div style="display: flex; flex-direction: column; gap: 8px;">
         <div style="font-size: 12.5px; color: var(--text2); line-height: 1.5; margin-bottom: 6px;">
-          Selecciona una paleta adaptada para mitigar la fatiga visual según tu entorno.
+          Selecciona una paleta adaptada para mitigar la fatiga visual según tu entorno de estudio.
         </div>
         <select class="field-select" style="font-size: 13px; padding: 10px;" onchange="setTemaVisual(this.value)">
           ${themeOptions}
@@ -2089,12 +2150,12 @@ function renderConfig() {
   }).join('');
 
   return `
-    <div class="config-back">
-      <button class="icon-btn" onclick="goTo('plan')">←</button>
-      <div class="page-title">Configuración del Temario</div>
+    <div class="page-title-row">
+      <div class="page-title">Ajustes</div>
     </div>
-    <div class="page-sub">Cada cambio reorganiza automáticamente tu plan de estudio.</div>
+    <div class="page-sub">Panel de Mandos — Gestión del Plan y Preferencias</div>
 
+    ${specialtySelectorCardHtml}
     ${themeSelectorHtml}
 
     <div class="card config-add-card">
