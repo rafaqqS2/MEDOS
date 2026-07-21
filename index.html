@@ -1714,51 +1714,80 @@ function marcarDominado(temaId) {
 function renderPrompts() {
   const temaId = STATE.activeTema || (getTemaDelDia() || {}).id;
   const tema = getAllTemas().find(t => t.id === temaId) || getTemaDelDia();
-  const promptsObj = getPromptCategories(tema);
+  const nombreTema = tema ? tema.nombre : '[TEMA ACTUAL]';
 
-  const renderCard = (p, type, idx) => `
-    <div class="prompt-card">
-      <div class="prompt-card-label"><span>${p.icon}</span> ${p.label}</div>
-      <div class="prompt-card-title">${p.title}</div>
-      <div class="prompt-card-preview">${p.preview}</div>
-      <div style="display: flex; gap: 8px;">
-        <button class="prompt-copy-btn" onclick="copyPrompt('${type}', ${idx})" style="flex: 1; padding: 10px;">
-          <span>📋</span> Copiar Prompt
-        </button>
-        <button class="prompt-copy-btn" onclick="abrirGeminiPromptsTab('${type}', ${idx})" style="flex: 1; padding: 10px; background: var(--accent-dim); color: var(--accent2); border-color: #B4A2F555;">
-          <span>🚀</span> Gemini
-        </button>
-      </div>
-    </div>
-  `;
-
-  const geminiCards = promptsObj.gemini.map((p, idx) => renderCard(p, 'gemini', idx)).join('');
-  const notebookCards = promptsObj.notebook.map((p, idx) => renderCard(p, 'notebook', idx)).join('');
-
-  window._currentPromptsSplit = promptsObj;
+  window._activeTemaName = nombreTema;
 
   return `
     <div class="page-title">Biblioteca de Prompts</div>
-    <div class="page-sub">Para: <strong>${tema ? tema.nombre : '—'}</strong></div>
+    <div class="page-sub">Generador inteligente para: <strong>${nombreTema}</strong></div>
 
-    <div class="section-label" style="color: var(--accent2); font-size: 11.5px; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 12px; margin-top: 10px;">
-      💬 Prompts para Gemini (Asistente Socrático)
+    <!-- TARJETA GEMINI -->
+    <div class="prompt-card" style="margin-bottom: 20px;">
+      <div class="prompt-card-label" style="color: var(--accent2);"><span>💬</span> Prompt para Gemini</div>
+      <div class="prompt-card-title">Estudio Profundo, Semiología y Tratamiento</div>
+      <div class="prompt-card-preview">
+        Genera una explicación fisiopatológica paso a paso, correlación semiológica deducible, tratamiento razonado y un caso clínico interactivo socrático.
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button class="prompt-copy-btn" onclick="copyMetaPrompt('gemini')" style="flex: 1; padding: 10px;">
+          <span>📋</span> Copiar Prompt
+        </button>
+        <button class="prompt-copy-btn" onclick="abrirGeminiMetaTab()" style="flex: 1; padding: 10px; background: var(--accent-dim); color: var(--accent2); border-color: #B4A2F555;">
+          <span>🚀</span> Gemini Directo
+        </button>
+      </div>
     </div>
-    ${geminiCards}
 
-    <div class="section-label" style="color: var(--green-ink); font-size: 11.5px; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 12px; margin-top: 24px;">
-      📚 Prompts para NotebookLM (Análisis de PDFs)
+    <!-- TARJETA NOTEBOOKLM -->
+    <div class="prompt-card" style="margin-bottom: 20px;">
+      <div class="prompt-card-label" style="color: var(--green-ink);"><span>📚</span> Prompt para NotebookLM</div>
+      <div class="prompt-card-title">Síntesis y Debate de Fuentes (PDFs)</div>
+      <div class="prompt-card-preview">
+        Sintetiza tus guías clínicas y PDFs para construir una tabla semiológica explicativa, esquema terapéutico basado en guías y preguntas de recuperación activa de tus textos.
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button class="prompt-copy-btn" onclick="copyMetaPrompt('notebook')" style="width: 100%; padding: 10px;">
+          <span>📋</span> Copiar Prompt para NotebookLM
+        </button>
+      </div>
     </div>
-    ${notebookCards}
 
-    <div class="card" style="background:var(--s2);border-style:dashed;margin-top:16px;">
-      <div style="font-size:12px;color:var(--text2);line-height:1.7;">
-        💡 <strong>Guía de Uso:</strong><br>
-        • Usa <strong>Gemini</strong> para discutir interactivamente la fisiología, simulando casos y defendiendo diagnósticos de forma oral.<br>
-        • Usa <strong>NotebookLM</strong> cargando tus guías de práctica clínica y resúmenes para extraer mecanismos exactos y contrastar consensos médicos directamente de tus documentos.
+    <!-- BOTÓN COMPLETO -->
+    <div style="margin-top: 24px; margin-bottom: 12px;">
+      <button class="btn btn-primary" onclick="copyMetaPrompt('completo')" style="width: 100%; padding: 12px; font-size: 13.5px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span>🔥</span> Copiar Meta-Prompt Completo
+      </button>
+    </div>
+
+    <div class="card" style="background:var(--s2); border-style:dashed; margin-top:16px;">
+      <div style="font-size:12.5px; color:var(--text2); line-height: 1.6;">
+        💡 <strong>¿Cómo estudiar con IAs?</strong><br>
+        • Usa <strong>Gemini</strong> como un profesor interactivo en tiempo real para interrogarte oralmente.<br>
+        • Usa <strong>NotebookLM</strong> subiendo los PDFs oficiales del Enarm o tus guías de práctica clínica para que las respuestas dependan exclusivamente del material de examen.
       </div>
     </div>
   `;
+}
+
+function getGeminiPromptText(temaNombre) {
+  return `Actúa como un internista experto y profesor de medicina. Explícame el tema ${temaNombre} siguiendo estrictamente este orden:
+1. FISIOPATOLOGÍA COMO CADENA CAUSAL: Explica el mecanismo paso a paso (estímulo inicial → alteración cellular/tisular → respuesta sistémica → manifestación clínica → complicación).
+2. SEMIOLOGÍA Y RAZONAMIENTO CLÍNICO: ¿Qué hallazgos semiológicos específicos (síntomas y signos al examen físico) debo ir a buscar activamente y cómo los explica el mecanismo fisiopatológico? Separa los datos deducibles de los datos a memorizar.
+3. TRATAMIENTO RAZONADO: Explica el tratamiento indicando qué punto exacto de la cascada fisiopatológica interrumpe o corrige cada fármaco/medida.
+4. DIAGNÓSTICO DIFERENCIAL (INTERLEAVING): Compáralo con 2-3 diagnósticos similares resaltando el hallazgo semiológico o mecanismo clave para distinguirlos.
+5. CASO CLÍNICO INTERACTIVO: Presenta un caso clínico corto y hazme preguntas de razonamiento semiológico y terapéutico antes de dar las respuestas.
+6. RECUPERACIÓN ACTIVA: Finaliza con 5-8 preguntas de autoevaluación sin opción múltiple para reconstruir la cadena causal de memoria.
+Prioriza fuentes como libros de texto mayores (Harrison, Robbins, Guyton) y guías científicas actualizadas.`;
+}
+
+function getNotebookPromptText(temaNombre) {
+  return `Actúa como un sintetizador de evidencia médica sobre mis fuentes cargadas respecto a ${temaNombre}. Organiza mis PDFs para generar:
+1. Cadena Causal Fisiopatológica en texto estructurado.
+2. Guía Semiológica: Tabla con los signos/síntomas clave que debo buscar en el examen físico y su justificación patofisiológica.
+3. Esquema de Tratamiento basado en guías: fármaco/medida y el mecanismo que bloquea.
+4. Tabla Comparativa con 2-3 diagnósticos diferenciales basada en la semiología clave.
+5. Set de 8 preguntas de recuperación activa sobre mis fuentes.`;
 }
 
 function copyText(text) {
@@ -1777,16 +1806,24 @@ function copyText(text) {
     });
 }
 
-function copyPrompt(type, idx) {
-  const p = window._currentPromptsSplit?.[type]?.[idx];
-  if (!p) return;
-  copyText(p.prompt);
+function copyMetaPrompt(type) {
+  const temaNombre = window._activeTemaName || '[TEMA ACTUAL]';
+  let text = '';
+  if (type === 'gemini') {
+    text = getGeminiPromptText(temaNombre);
+  } else if (type === 'notebook') {
+    text = getNotebookPromptText(temaNombre);
+  } else if (type === 'completo') {
+    text = `=== PROMPT PARA GEMINI (Estudio Interactivo) ===\n${getGeminiPromptText(temaNombre)}\n\n=== PROMPT PARA NOTEBOOKLM (Análisis de PDFs) ===\n${getNotebookPromptText(temaNombre)}`;
+  }
+  
+  copyText(text);
 }
 
-function abrirGeminiPromptsTab(type, idx) {
-  const p = window._currentPromptsSplit?.[type]?.[idx];
-  if (!p) return;
-  const url = 'https://gemini.google.com/app?q=' + encodeURIComponent(p.prompt);
+function abrirGeminiMetaTab() {
+  const temaNombre = window._activeTemaName || '[TEMA ACTUAL]';
+  const prompt = getGeminiPromptText(temaNombre);
+  const url = 'https://gemini.google.com/app?q=' + encodeURIComponent(prompt);
   window.open(url, '_blank');
 }
 
