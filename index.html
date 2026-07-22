@@ -844,7 +844,8 @@ input, textarea, select { font-family: inherit; }
 // ═══════════════════════════════════════════════════════════════════════════
 
 const ESPECIALIDADES = [
-  { id: 'cardio',   name: 'Cardiología',         color: '#F5A9B8', emoji: '🫀' },
+  { id: 'intro',    name: 'Fisiología Core',      color: '#D7E29B', emoji: '🧬' },
+  { id: 'cardio',   name: 'Cardiología',          color: '#F5A9B8', emoji: '🫀' },
   { id: 'neumo',    name: 'Neumología',           color: '#A8D8F0', emoji: '🫁' },
   { id: 'nefro',    name: 'Nefrología',           color: '#B8A9F0', emoji: '💧' },
   { id: 'gastro',   name: 'Gastroenterología',    color: '#D8B4E2', emoji: '🫄' },
@@ -854,12 +855,18 @@ const ESPECIALIDADES = [
   { id: 'neuro',    name: 'Neurología',           color: '#9FD9E0', emoji: '🧠' },
   { id: 'reuma',    name: 'Reumatología',         color: '#E8AEDD', emoji: '🦴' },
   { id: 'farm',     name: 'Farmacología Clínica', color: '#D7E29B', emoji: '💊' },
+  { id: 'crit',     name: 'Medicina Crítica',     color: '#F5A7AE', emoji: '🚨' },
 ];
 
 // dif: dificultad 1-5 | prio: A=alta/B=media/C=baja | deps: dependencias conceptuales
 const TEMAS = [
+  // BLOQUE 0: INTRODUCCIÓN Y FISIOLOGÍA CORE
+  { id:'i_fisio', spec:'intro', nombre:'Principios de Fisiopatología y Homeostasis', dif:2, prio:'A', deps:[], unlock:['i_medio','i_farma'] },
+  { id:'i_medio', spec:'intro', nombre:'Medio Interno, Electrólitos y Equilibrio Ácido-Base', dif:3, prio:'A', deps:['i_fisio'], unlock:['i_farma'] },
+  { id:'i_farma', spec:'intro', nombre:'Farmacoterapia y Medicamentos de Uso Frecuente en Medicina Interna', dif:3, prio:'A', deps:['i_medio'], unlock:['c01','n01','nf01','g01','e01','h01','i01','ne01','r01','f01'] },
+
   // CARDIOLOGÍA
-  { id:'c01', spec:'cardio', nombre:'Fisiología cardíaca y hemodinámica', dif:2, prio:'A', deps:[], unlock:['c02','c03','c04','c05','c06','n01','nf01'] },
+  { id:'c01', spec:'cardio', nombre:'Fisiología cardíaca y hemodinámica', dif:2, prio:'A', deps:['i_farma'], unlock:['c02','c03','c04','c05','c06','n01','nf01'] },
   { id:'c02', spec:'cardio', nombre:'Insuficiencia cardíaca (sistólica y diastólica)', dif:4, prio:'A', deps:['c01'], unlock:['c06','nf02','nf05'] },
   { id:'c03', spec:'cardio', nombre:'Síndrome coronario agudo (SCASEST y SCACEST)', dif:5, prio:'A', deps:['c01'], unlock:['c04'] },
   { id:'c04', spec:'cardio', nombre:'Arritmias y trastornos de la conducción', dif:4, prio:'A', deps:['c01','c03'], unlock:[] },
@@ -871,7 +878,7 @@ const TEMAS = [
   { id:'c10', spec:'cardio', nombre:'Shock: tipos y manejo fisiopatológico', dif:5, prio:'A', deps:['c01','c02'], unlock:['i03'] },
 
   // NEUMOLOGÍA
-  { id:'n01', spec:'neumo', nombre:'Fisiología respiratoria y control ventilatorio', dif:2, prio:'A', deps:[], unlock:['n02','n03','n04','n05','n06','c09'] },
+  { id:'n01', spec:'neumo', nombre:'Fisiología respiratoria y control ventilatorio', dif:2, prio:'A', deps:['i_farma'], unlock:['n02','n03','n04','n05','n06','c09'] },
   { id:'n02', spec:'neumo', nombre:'EPOC: fisiopatología y exacerbaciones', dif:4, prio:'A', deps:['n01'], unlock:[] },
   { id:'n03', spec:'neumo', nombre:'Asma bronquial y broncoespasmo', dif:3, prio:'A', deps:['n01'], unlock:[] },
   { id:'n04', spec:'neumo', nombre:'Neumonía adquirida en la comunidad y hospitalaria', dif:3, prio:'A', deps:['n01','i01'], unlock:[] },
@@ -881,7 +888,7 @@ const TEMAS = [
   { id:'n08', spec:'neumo', nombre:'Insuficiencia respiratoria aguda y crónica', dif:4, prio:'A', deps:['n01','n02'], unlock:[] },
 
   // NEFROLOGÍA
-  { id:'nf01', spec:'nefro', nombre:'Fisiología renal y regulación del volumen', dif:2, prio:'A', deps:[], unlock:['nf02','nf03','nf04','nf05','nf06'] },
+  { id:'nf01', spec:'nefro', nombre:'Fisiología renal y regulación del volumen', dif:2, prio:'A', deps:['i_farma'], unlock:['nf02','nf03','nf04','nf05','nf06'] },
   { id:'nf02', spec:'nefro', nombre:'Lesión renal aguda: prerrenal, renal y posrenal', dif:4, prio:'A', deps:['nf01','c01'], unlock:['nf03'] },
   { id:'nf03', spec:'nefro', nombre:'Enfermedad renal crónica y síndrome urémico', dif:4, prio:'A', deps:['nf01','nf02'], unlock:[] },
   { id:'nf04', spec:'nefro', nombre:'Trastornos del sodio: hiponatremia e hipernatremia', dif:4, prio:'A', deps:['nf01'], unlock:[] },
@@ -891,33 +898,33 @@ const TEMAS = [
   { id:'nf08', spec:'nefro', nombre:'RAAS: fisiología, patología y farmacología', dif:3, prio:'A', deps:['nf01','c05'], unlock:['c02','g04'] },
 
   // GASTROENTEROLOGÍA
-  { id:'g01', spec:'gastro', nombre:'Hemorragia digestiva alta y baja', dif:3, prio:'A', deps:[], unlock:[] },
-  { id:'g02', spec:'gastro', nombre:'Hepatitis aguda y crónica: viral, alcohólica y autoinmune', dif:4, prio:'A', deps:[], unlock:['g03','g04'] },
+  { id:'g01', spec:'gastro', nombre:'Hemorragia digestiva alta y baja', dif:3, prio:'A', deps:['i_farma'], unlock:[] },
+  { id:'g02', spec:'gastro', nombre:'Hepatitis aguda y crónica: viral, alcohólica y autoinmune', dif:4, prio:'A', deps:['i_farma'], unlock:['g03','g04'] },
   { id:'g03', spec:'gastro', nombre:'Cirrosis hepática y síndrome hepatorrenal', dif:5, prio:'A', deps:['g02','nf01'], unlock:['g04'] },
   { id:'g04', spec:'gastro', nombre:'Hipertensión portal y sus complicaciones', dif:4, prio:'A', deps:['g03','nf08'], unlock:[] },
-  { id:'g05', spec:'gastro', nombre:'Pancreatitis aguda y crónica', dif:3, prio:'A', deps:[], unlock:[] },
-  { id:'g06', spec:'gastro', nombre:'Enfermedad inflamatoria intestinal', dif:3, prio:'B', deps:[], unlock:[] },
-  { id:'g07', spec:'gastro', nombre:'Íleo, obstrucción intestinal y abdomen agudo', dif:3, prio:'B', deps:[], unlock:[] },
+  { id:'g05', spec:'gastro', nombre:'Pancreatitis aguda y crónica', dif:3, prio:'A', deps:['i_farma'], unlock:[] },
+  { id:'g06', spec:'gastro', nombre:'Enfermedad inflamatoria intestinal', dif:3, prio:'B', deps:['i_farma'], unlock:[] },
+  { id:'g07', spec:'gastro', nombre:'Íleo, obstrucción intestinal y abdomen agudo', dif:3, prio:'B', deps:['i_farma'], unlock:[] },
 
   // ENDOCRINOLOGÍA
-  { id:'e01', spec:'endo', nombre:'Diabetes mellitus: tipos, fisiopatología y complicaciones', dif:3, prio:'A', deps:[], unlock:['e02','e03'] },
+  { id:'e01', spec:'endo', nombre:'Diabetes mellitus: tipos, fisiopatología y complicaciones', dif:3, prio:'A', deps:['i_farma'], unlock:['e02','e03'] },
   { id:'e02', spec:'endo', nombre:'Cetoacidosis diabética y estado hiperosmolar', dif:5, prio:'A', deps:['e01','nf06'], unlock:[] },
   { id:'e03', spec:'endo', nombre:'Hipoglucemia: mecanismos y manejo', dif:3, prio:'A', deps:['e01'], unlock:[] },
-  { id:'e04', spec:'endo', nombre:'Disfunción tiroidea: hipotiroidismo e hipertiroidismo', dif:3, prio:'A', deps:[], unlock:['e05'] },
+  { id:'e04', spec:'endo', nombre:'Disfunción tiroidea: hipotiroidismo e hipertiroidismo', dif:3, prio:'A', deps:['i_farma'], unlock:['e05'] },
   { id:'e05', spec:'endo', nombre:'Crisis tirotóxica y coma mixedematoso', dif:5, prio:'B', deps:['e04'], unlock:[] },
-  { id:'e06', spec:'endo', nombre:'Insuficiencia suprarrenal y crisis adrenal', dif:4, prio:'B', deps:[], unlock:[] },
+  { id:'e06', spec:'endo', nombre:'Insuficiencia suprarrenal y crisis adrenal', dif:4, prio:'B', deps:['i_farma'], unlock:[] },
   { id:'e07', spec:'endo', nombre:'Síndrome de Cushing e hiperaldosteronismo', dif:4, prio:'B', deps:['nf08'], unlock:[] },
   { id:'e08', spec:'endo', nombre:'Calcio, fósforo y PTH: trastornos clínicos', dif:4, prio:'B', deps:['nf01'], unlock:[] },
 
   // HEMATOLOGÍA
-  { id:'h01', spec:'hemato', nombre:'Hemostasia: coagulación, plaquetas y fibrinólisis', dif:3, prio:'A', deps:[], unlock:['h02','h03','c09'] },
+  { id:'h01', spec:'hemato', nombre:'Hemostasia: coagulación, plaquetas y fibrinólisis', dif:3, prio:'A', deps:['i_farma'], unlock:['h02','h03','c09'] },
   { id:'h02', spec:'hemato', nombre:'Anemias: clasificación fisiopatológica', dif:3, prio:'A', deps:['h01'], unlock:[] },
   { id:'h03', spec:'hemato', nombre:'Trombocitopenias y coagulopatías', dif:4, prio:'A', deps:['h01'], unlock:[] },
   { id:'h04', spec:'hemato', nombre:'CID: fisiopatología y diagnóstico diferencial', dif:5, prio:'A', deps:['h01','i02'], unlock:[] },
   { id:'h05', spec:'hemato', nombre:'Linfomas y leucemias: presentación clínica', dif:4, prio:'B', deps:['h01'], unlock:[] },
 
   // INFECTOLOGÍA
-  { id:'i01', spec:'infecto', nombre:'Fisiopatología de la infección y respuesta inmune', dif:2, prio:'A', deps:[], unlock:['i02','i03','n04'] },
+  { id:'i01', spec:'infecto', nombre:'Fisiopatología de la infección y respuesta inmune', dif:2, prio:'A', deps:['i_farma'], unlock:['i02','i03','n04'] },
   { id:'i02', spec:'infecto', nombre:'Sepsis y shock séptico (Sepsis-3)', dif:5, prio:'A', deps:['i01','c01','nf01'], unlock:['i03','h04','n05'] },
   { id:'i03', spec:'infecto', nombre:'Antibióticos: mecanismos, resistencia y farmacocinética', dif:4, prio:'A', deps:['i01'], unlock:[] },
   { id:'i04', spec:'infecto', nombre:'Infecciones de vías urinarias complicadas', dif:2, prio:'A', deps:['i01'], unlock:[] },
@@ -927,7 +934,7 @@ const TEMAS = [
   { id:'i08', spec:'infecto', nombre:'VIH: fisiopatología, estadificación y TARV', dif:4, prio:'B', deps:['i01'], unlock:[] },
 
   // NEUROLOGÍA
-  { id:'ne01', spec:'neuro', nombre:'Fisiopatología del daño neurológico y neuroplasticidad', dif:3, prio:'A', deps:[], unlock:['ne02','ne03','i06'] },
+  { id:'ne01', spec:'neuro', nombre:'Fisiopatología del daño neurológico y neuroplasticidad', dif:3, prio:'A', deps:['i_farma'], unlock:['ne02','ne03','i06'] },
   { id:'ne02', spec:'neuro', nombre:'Ictus isquémico y hemorrágico', dif:5, prio:'A', deps:['ne01','c01'], unlock:[] },
   { id:'ne03', spec:'neuro', nombre:'Crisis epilépticas y status epilepticus', dif:4, prio:'A', deps:['ne01'], unlock:[] },
   { id:'ne04', spec:'neuro', nombre:'Encefalopatía metabólica y toxic-metabólica', dif:4, prio:'A', deps:['ne01','nf06','e01'], unlock:[] },
@@ -935,17 +942,101 @@ const TEMAS = [
   { id:'ne06', spec:'neuro', nombre:'Enfermedades neuromusculares: Guillain-Barré y MG', dif:4, prio:'B', deps:['ne01'], unlock:[] },
 
   // REUMATOLOGÍA
-  { id:'r01', spec:'reuma', nombre:'Lupus eritematoso sistémico', dif:4, prio:'A', deps:['i01'], unlock:[] },
-  { id:'r02', spec:'reuma', nombre:'Artritis reumatoide y artritis reactiva', dif:3, prio:'B', deps:['i01'], unlock:[] },
-  { id:'r03', spec:'reuma', nombre:'Vasculitis sistémicas', dif:4, prio:'B', deps:['i01','nf01'], unlock:[] },
-  { id:'r04', spec:'reuma', nombre:'Gota e hiperuricemia', dif:3, prio:'B', deps:['nf01'], unlock:[] },
+  { id:'r01', spec:'reuma', nombre:'Lupus eritematoso sistémico', dif:4, prio:'A', deps:['i_farma'], unlock:[] },
+  { id:'r02', spec:'reuma', nombre:'Artritis reumatoide y artritis reactiva', dif:3, prio:'B', deps:['i_farma'], unlock:[] },
+  { id:'r03', spec:'reuma', nombre:'Vasculitis sistémicas', dif:4, prio:'B', deps:['i_farma'], unlock:[] },
+  { id:'r04', spec:'reuma', nombre:'Gota e hiperuricemia', dif:3, prio:'B', deps:['i_farma'], unlock:[] },
 
   // FARMACOLOGÍA CLÍNICA
-  { id:'f01', spec:'farm', nombre:'Farmacocinética y farmacodinámica clínica', dif:3, prio:'A', deps:[], unlock:['f02','f03','f04','f05'] },
+  { id:'f01', spec:'farm', nombre:'Farmacocinética y farmacodinámica clínica', dif:3, prio:'A', deps:['i_farma'], unlock:['f02','f03','f04','f05'] },
   { id:'f02', spec:'farm', nombre:'Fármacos cardiovasculares: β-bloqueadores, IECA, diuréticos', dif:4, prio:'A', deps:['f01','c01','nf08'], unlock:[] },
   { id:'f03', spec:'farm', nombre:'Anticoagulantes y antiagregantes plaquetarios', dif:4, prio:'A', deps:['f01','h01'], unlock:[] },
   { id:'f04', spec:'farm', nombre:'Corticoides: efectos, usos y complicaciones', dif:3, prio:'A', deps:['f01'], unlock:[] },
   { id:'f05', spec:'farm', nombre:'Analgesia, sedación y manejo del dolor', dif:3, prio:'B', deps:['f01'], unlock:[] },
+];
+
+const TEMAS_INTERNA = [
+  // BLOQUE 0: INTRODUCCIÓN Y FISIOLOGÍA CORE
+  { id:'i_fisio', spec:'intro', nombre:'Principios de Fisiopatología y Homeostasis', dif:2, prio:'A', deps:[], unlock:['i_medio','i_farma'] },
+  { id:'i_medio', spec:'intro', nombre:'Medio Interno, Electrólitos y Equilibrio Ácido-Base', dif:3, prio:'A', deps:['i_fisio'], unlock:['i_farma'] },
+  { id:'i_farma', spec:'intro', nombre:'Farmacoterapia y Medicamentos de Uso Frecuente en Medicina Interna', dif:3, prio:'A', deps:['i_medio'], unlock:['card_fisio','reuma_fisio','neumo_fisio','hema_fisio','endo_fisio','crit_fisio','nefro_fisio','neuro_fisio','gastro_fisio'] },
+
+  // BLOQUE 1: CARDIOLOGÍA
+  { id:'card_fisio', spec:'cardio', nombre:'0. Fisiología cardíaca', dif:2, prio:'A', deps:['i_farma'], unlock:['card_icc','card_chagas','card_reumatica','card_hta','card_valvulo','card_arritmias','card_endocarditis','card_coronario'] },
+  { id:'card_icc', spec:'cardio', nombre:'1. Insuficiencia Cardíaca Congestiva', dif:4, prio:'A', deps:['card_fisio'], unlock:[] },
+  { id:'card_chagas', spec:'cardio', nombre:'2. Enfermedad de Chagas', dif:3, prio:'B', deps:['card_fisio'], unlock:[] },
+  { id:'card_reumatica', spec:'cardio', nombre:'3. Fiebre Reumática', dif:3, prio:'B', deps:['card_fisio'], unlock:[] },
+  { id:'card_hta', spec:'cardio', nombre:'4. HTA (Hipertensión Arterial)', dif:3, prio:'A', deps:['card_fisio'], unlock:[] },
+  { id:'card_valvulo', spec:'cardio', nombre:'5. Valvulopatías', dif:4, prio:'B', deps:['card_fisio'], unlock:[] },
+  { id:'card_arritmias', spec:'cardio', nombre:'6. Arritmias Cardiacas', dif:4, prio:'A', deps:['card_fisio'], unlock:[] },
+  { id:'card_endocarditis', spec:'cardio', nombre:'7. Endocarditis Bacteriana', dif:4, prio:'A', deps:['card_fisio'], unlock:[] },
+  { id:'card_coronario', spec:'cardio', nombre:'8. Sd. Coronario + Valores Normales de Laboratorio', dif:5, prio:'A', deps:['card_fisio'], unlock:[] },
+
+  // BLOQUE 2: REUMATOLOGÍA
+  { id:'reuma_fisio', spec:'reuma', nombre:'0. Fisiología reumatológica', dif:2, prio:'B', deps:['i_farma'], unlock:['reuma_ar','reuma_artrosis','reuma_vasculitis','reuma_les','reuma_gota','reuma_seudogota'] },
+  { id:'reuma_ar', spec:'reuma', nombre:'9. Artritis Reumatoidea', dif:4, prio:'A', deps:['reuma_fisio'], unlock:[] },
+  { id:'reuma_artrosis', spec:'reuma', nombre:'10. Artrosis', dif:3, prio:'B', deps:['reuma_fisio'], unlock:[] },
+  { id:'reuma_vasculitis', spec:'reuma', nombre:'11. Vasculitis', dif:4, prio:'B', deps:['reuma_fisio'], unlock:[] },
+  { id:'reuma_les', spec:'reuma', nombre:'12. LES (Lupus Eritematoso Sistémico)', dif:4, prio:'A', deps:['reuma_fisio'], unlock:[] },
+  { id:'reuma_gota', spec:'reuma', nombre:'13. Gota', dif:3, prio:'B', deps:['reuma_fisio'], unlock:[] },
+  { id:'reuma_seudogota', spec:'reuma', nombre:'14. Seudogota', dif:3, prio:'B', deps:['reuma_fisio'], unlock:[] },
+
+  // BLOQUE 3: NEUMOLOGÍA
+  { id:'neumo_fisio', spec:'neumo', nombre:'0. Fisiología neumología', dif:2, prio:'A', deps:['i_farma'], unlock:['neumo_tep','neumo_asma','neumo_tb','neumo_pleura','neumo_epoc','neumo_neumonias'] },
+  { id:'neumo_tep', spec:'neumo', nombre:'15. Tromboembolismo Pulmonar', dif:4, prio:'A', deps:['neumo_fisio'], unlock:[] },
+  { id:'neumo_asma', spec:'neumo', nombre:'16. Asma', dif:3, prio:'A', deps:['neumo_fisio'], unlock:[] },
+  { id:'neumo_tb', spec:'neumo', nombre:'17. Tuberculosis', dif:3, prio:'B', deps:['neumo_fisio'], unlock:[] },
+  { id:'neumo_pleura', spec:'neumo', nombre:'18. Enf. de la Pleura', dif:3, prio:'B', deps:['neumo_fisio'], unlock:[] },
+  { id:'neumo_epoc', spec:'neumo', nombre:'19. Enf. Pulmonar Obstructiva Crónica (EPOC)', dif:4, prio:'A', deps:['neumo_fisio'], unlock:[] },
+  { id:'neumo_neumonias', spec:'neumo', nombre:'20. Neumonías', dif:3, prio:'A', deps:['neumo_fisio'], unlock:[] },
+
+  // BLOQUE 4: HEMATOLOGÍA
+  { id:'hema_fisio', spec:'hemato', nombre:'0. Fisiología hematológica', dif:2, prio:'B', deps:['i_farma'], unlock:['hema_anemias','hema_trombocitopenias','hema_leucemias','hema_vih'] },
+  { id:'hema_anemias', spec:'hemato', nombre:'21. Anemias', dif:3, prio:'A', deps:['hema_fisio'], unlock:[] },
+  { id:'hema_trombocitopenias', spec:'hemato', nombre:'22. Trombocitopenias', dif:4, prio:'A', deps:['hema_fisio'], unlock:[] },
+  { id:'hema_leucemias', spec:'hemato', nombre:'23. Leucemias', dif:4, prio:'B', deps:['hema_fisio'], unlock:[] },
+  { id:'hema_vih', spec:'hemato', nombre:'Infectología VIH - SIDA', dif:4, prio:'A', deps:['hema_fisio'], unlock:[] },
+
+  // BLOQUE 5: ENDOCRINOLOGÍA
+  { id:'endo_fisio', spec:'endo', nombre:'0. Fisiología endocrinológica', dif:2, prio:'A', deps:['i_farma'], unlock:['endo_diabetes','endo_cetoacidosis','endo_hipoglucemias','endo_hipotalamo','endo_tiroides'] },
+  { id:'endo_diabetes', spec:'endo', nombre:'24. Diabetes Mellitus Tipo 1 y 2', dif:3, prio:'A', deps:['endo_fisio'], unlock:[] },
+  { id:'endo_cetoacidosis', spec:'endo', nombre:'25. Cetoacidosis Diabética y Estado Hiperosmolar', dif:5, prio:'A', deps:['endo_fisio'], unlock:[] },
+  { id:'endo_hipoglucemias', spec:'endo', nombre:'26. Hipoglucemias', dif:3, prio:'A', deps:['endo_fisio'], unlock:[] },
+  { id:'endo_hipotalamo', spec:'endo', nombre:'27. Hipotálamo Hipófisis y sus Patologías', dif:4, prio:'B', deps:['endo_fisio'], unlock:[] },
+  { id:'endo_tiroides', spec:'endo', nombre:'28. Enf. Tiroides', dif:3, prio:'A', deps:['endo_fisio'], unlock:[] },
+
+  // BLOQUE 6: MEDICINA CRÍTICA
+  { id:'crit_fisio', spec:'crit', nombre:'0. Fisiología básica para medicina crítica', dif:3, prio:'A', deps:['i_farma'], unlock:['crit_sepsis','crit_cardiogenico','crit_hipovolemico','crit_neumonia_grave','crit_multiorganica','crit_tec'] },
+  { id:'crit_sepsis', spec:'crit', nombre:'29. Choque Séptico', dif:5, prio:'A', deps:['crit_fisio'], unlock:[] },
+  { id:'crit_cardiogenico', spec:'crit', nombre:'30. Choque Cardiogénico', dif:5, prio:'A', deps:['crit_fisio'], unlock:[] },
+  { id:'crit_hipovolemico', spec:'crit', nombre:'31. Choque Hipovolémico', dif:4, prio:'A', deps:['crit_fisio'], unlock:[] },
+  { id:'crit_neumonia_grave', spec:'crit', nombre:'32. Neumonía Grave', dif:4, prio:'A', deps:['crit_fisio'], unlock:[] },
+  { id:'crit_multiorganica', spec:'crit', nombre:'33. Falla Multiorgánica', dif:5, prio:'B', deps:['crit_fisio'], unlock:[] },
+  { id:'crit_tec', spec:'crit', nombre:'34. Traumatismo Encéfalo Craneal (TEC)', dif:4, prio:'B', deps:['crit_fisio'], unlock:[] },
+
+  // BLOQUE 7: NEFROLOGÍA
+  { id:'nefro_fisio', spec:'nefro', nombre:'0. Fisiología para nefrología', dif:2, prio:'A', deps:['i_farma'], unlock:['nefro_ira','nefro_erc','nefro_glomerulonefritis','nefro_nefrotico','nefro_nefritico'] },
+  { id:'nefro_ira', spec:'nefro', nombre:'35. Injuria Renal Aguda', dif:4, prio:'A', deps:['nefro_fisio'], unlock:[] },
+  { id:'nefro_erc', spec:'nefro', nombre:'36. Enfermedad Renal Crónica', dif:4, prio:'A', deps:['nefro_fisio'], unlock:[] },
+  { id:'nefro_glomerulonefritis', spec:'nefro', nombre:'37. Glomerulonefritis', dif:4, prio:'B', deps:['nefro_fisio'], unlock:[] },
+  { id:'nefro_nefrotico', spec:'nefro', nombre:'38. Síndrome Nefrótico', dif:4, prio:'A', deps:['nefro_fisio'], unlock:[] },
+  { id:'nefro_nefritico', spec:'nefro', nombre:'39. Síndrome Nefrítico', dif:4, prio:'A', deps:['nefro_fisio'], unlock:[] },
+
+  // BLOQUE 8: NEUROLOGÍA
+  { id:'neuro_fisio', spec:'neuro', nombre:'0. Fisiología neurológica', dif:2, prio:'A', deps:['i_farma'], unlock:['neuro_ecv','neuro_convulsivo','neuro_meningitis','neuro_cefalea'] },
+  { id:'neuro_ecv', spec:'neuro', nombre:'40. Enfermedad Cerebrovascular', dif:5, prio:'A', deps:['neuro_fisio'], unlock:[] },
+  { id:'neuro_convulsivo', spec:'neuro', nombre:'41. Síndrome Convulsivo', dif:4, prio:'A', deps:['neuro_fisio'], unlock:[] },
+  { id:'neuro_meningitis', spec:'neuro', nombre:'42. Meningitis', dif:4, prio:'A', deps:['neuro_fisio'], unlock:[] },
+  { id:'neuro_cefalea', spec:'neuro', nombre:'43. Cefalea', dif:3, prio:'B', deps:['neuro_fisio'], unlock:[] },
+
+  // BLOQUE 9: GASTROENTEROLOGÍA
+  { id:'gastro_fisio', spec:'gastro', nombre:'0. Fisiología gastroenterológica', dif:2, prio:'A', deps:['i_farma'], unlock:['gastro_cirrosis','gastro_hemorragia','gastro_acido_peptica','gastro_pancreatitis','gastro_hepatitis','gastro_diarreas'] },
+  { id:'gastro_cirrosis', spec:'gastro', nombre:'44. Hepatopatía Alcohólica, Cirrosis Hepática y sus Complicaciones', dif:5, prio:'A', deps:['gastro_fisio'], unlock:[] },
+  { id:'gastro_hemorragia', spec:'gastro', nombre:'45. Hemorragia Digestiva Alta y Baja', dif:3, prio:'A', deps:['gastro_fisio'], unlock:[] },
+  { id:'gastro_acido_peptica', spec:'gastro', nombre:'46. Enf. Ácido Péptica / Úlcera Péptica', dif:3, prio:'A', deps:['gastro_fisio'], unlock:[] },
+  { id:'gastro_pancreatitis', spec:'gastro', nombre:'47. Pancreatitis Aguda y Pancreatitis Crónica', dif:3, prio:'A', deps:['gastro_fisio'], unlock:[] },
+  { id:'gastro_hepatitis', spec:'gastro', nombre:'48. Hepatitis', dif:4, prio:'B', deps:['gastro_fisio'], unlock:[] },
+  { id:'gastro_diarreas', spec:'gastro', nombre:'49. Diarreas', dif:3, prio:'B', deps:['gastro_fisio'], unlock:[] }
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -965,6 +1056,7 @@ const DEFAULT_STATE = {
   customTemas: [],       // temas agregados por el usuario
   customEspecialidades: [], // módulos agregados por el usuario
   theme: 'lila',          // 'lila' | 'nocturna' | 'menta'
+  temarioActivo: 'completo', // 'completo' | 'interna'
 };
 
 let STATE = JSON.parse(localStorage.getItem('medos4_state') || 'null') || JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -1039,7 +1131,8 @@ function getAllEspecialidades() {
 }
 
 function getAllTemasRaw() {
-  return TEMAS.concat(STATE.customTemas || []);
+  const baseTemas = (STATE.temarioActivo === 'interna') ? TEMAS_INTERNA : TEMAS;
+  return baseTemas.concat(STATE.customTemas || []);
 }
 
 // Devuelve solo los temas activos, con overrides aplicados (nombre/dif/prio/tiempo/módulo)
@@ -1629,6 +1722,15 @@ function renderPlan() {
       <button class="icon-btn" onclick="goTo('config')" title="Configuración del temario">⚙︎</button>
     </div>
     <div class="page-sub">Secuenciado por dependencias — no por orden del libro</div>
+
+    <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--s2); padding: 8px 12px; border-radius: var(--r-md); border: 1px solid var(--border);">
+      <div style="font-size: 11.5px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;">Plan de Rotación:</div>
+      <select class="field-select" style="max-width: 200px; font-size: 11.5px; padding: 4px 8px; border-radius: 6px; background: var(--s1); border-color: var(--border2);" onchange="setTemarioActivo(this.value)">
+        <option value="completo" ${STATE.temarioActivo === 'completo' ? 'selected' : ''}>🎯 Temario Completo</option>
+        <option value="interna" ${STATE.temarioActivo === 'interna' ? 'selected' : ''}>🩺 Medicina Interna</option>
+      </select>
+    </div>
+
     ${activeSpecSelectorHtml}
     <div class="plan-filters">${filterBtns}</div>
     ${sections || '<div style="text-align:center;color:var(--text3);padding:40px 0;">Sin temas con este filtro</div>'}
@@ -1779,12 +1881,21 @@ function marcarDominado(temaId) {
   STATE.heatmap[hoy] = (STATE.heatmap[hoy] || 0) + 1;
   STATE.dia = getDiaActual();
   STATE.activeTema = null;
+
+  // Registrar estudio nocturno (entre 22:00 y 06:00)
+  const hr = new Date().getHours();
+  if (hr >= 22 || hr < 6) {
+    STATE.guardianNocturno = true;
+  }
+  // Registrar que se dominó un tema en esta sesión activa
+  window._hasStudiedThisSession = true;
+
   saveState();
   
   // Disparar celebración de confeti
   try { launchConfetti(); } catch(e) { console.error(e); }
   
-  showToast('✓ Tema dominado — Día ' + STATE.dia);
+  showToast('✓ Tema dominado');
   setTimeout(() => goTo('inicio'), 1200);
 }
 
@@ -1803,33 +1914,64 @@ function renderPrompts() {
     <div class="page-title">Biblioteca de Prompts</div>
     <div class="page-sub">Generador inteligente para: <strong>${nombreTema}</strong></div>
 
-    <!-- TARJETA GEMINI -->
+    <!-- PROMPT 1: GEMINI ESTÁNDAR -->
     <div class="prompt-card" style="margin-bottom: 20px;">
-      <div class="prompt-card-label" style="color: var(--accent2);"><span>💬</span> Prompt para Gemini</div>
-      <div class="prompt-card-title">Estudio Profundo, Semiología y Tratamiento</div>
+      <div class="prompt-card-label" style="color: var(--accent2);"><span>💬</span> Gemini Estándar</div>
+      <div class="prompt-card-title">Estudio Profundo y Caso Clínico</div>
       <div class="prompt-card-preview">
-        Genera una explicación fisiopatológica paso a paso, correlación semiológica deducible, tratamiento razonado y un caso clínico interactivo socrático.
+        Fisiopatología causal, examen físico semiológico deducible, criterios diagnósticos con justificación de estudios y tratamiento razonado.
       </div>
       <div style="display: flex; gap: 8px; margin-top: 10px;">
         <button class="prompt-copy-btn" onclick="copyMetaPrompt('gemini')" style="flex: 1; padding: 10px;">
           <span>📋</span> Copiar Prompt
         </button>
-        <button class="prompt-copy-btn" onclick="abrirGeminiMetaTab()" style="flex: 1; padding: 10px; background: var(--accent-dim); color: var(--accent2); border-color: #B4A2F555;">
+        <button class="prompt-copy-btn" onclick="abrirGeminiMetaTab('gemini')" style="flex: 1; padding: 10px; background: var(--accent-dim); color: var(--accent2); border-color: #B4A2F555;">
           <span>🚀</span> Gemini Directo
         </button>
       </div>
     </div>
 
-    <!-- TARJETA NOTEBOOKLM -->
+    <!-- PROMPT 2: TUTOR SOCRÁTICO EXIGENTE -->
     <div class="prompt-card" style="margin-bottom: 20px;">
-      <div class="prompt-card-label" style="color: var(--green-ink);"><span>📚</span> Prompt para NotebookLM</div>
-      <div class="prompt-card-title">Síntesis y Debate de Fuentes (PDFs)</div>
+      <div class="prompt-card-label" style="color: var(--accent2);"><span>❓</span> Tutor Socrático Exigente</div>
+      <div class="prompt-card-title">Simulación Clínica Interactiva (Gemini)</div>
       <div class="prompt-card-preview">
-        Sintetiza tus guías clínicas y PDFs para construir una tabla semiológica explicativa, esquema terapéutico basado en guías y preguntas de recuperación activa de tus textos.
+        Caso clínico paso a paso guiado por preguntas. La IA no te dará respuestas servidas, sino que contrargumentará para hacerte pensar.
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button class="prompt-copy-btn" onclick="copyMetaPrompt('socratic')" style="flex: 1; padding: 10px;">
+          <span>📋</span> Copiar Prompt
+        </button>
+        <button class="prompt-copy-btn" onclick="abrirGeminiMetaTab('socratic')" style="flex: 1; padding: 10px; background: var(--accent-dim); color: var(--accent2); border-color: #B4A2F555;">
+          <span>🚀</span> Gemini Directo
+        </button>
+      </div>
+    </div>
+
+    <!-- PROMPT 3: NOTEBOOKLM SÍNTESIS -->
+    <div class="prompt-card" style="margin-bottom: 20px;">
+      <div class="prompt-card-label" style="color: var(--green-ink);"><span>📚</span> NotebookLM Síntesis</div>
+      <div class="prompt-card-title">Análisis y Contraste de Guías y PDFs</div>
+      <div class="prompt-card-preview">
+        Sintetiza tus guías médicas cargadas. Genera cadenas causales, tablas semiológicas clínicas y esquemas terapéuticos basados en tus fuentes.
       </div>
       <div style="display: flex; gap: 8px; margin-top: 10px;">
         <button class="prompt-copy-btn" onclick="copyMetaPrompt('notebook')" style="width: 100%; padding: 10px;">
-          <span>📋</span> Copiar Prompt para NotebookLM
+          <span>📋</span> Copiar para NotebookLM
+        </button>
+      </div>
+    </div>
+
+    <!-- PROMPT 4: CREADOR DE DIAPOSITIVAS -->
+    <div class="prompt-card" style="margin-bottom: 20px;">
+      <div class="prompt-card-label" style="color: var(--green-ink);"><span>📊</span> Creador de Diapositivas</div>
+      <div class="prompt-card-title">Estructura para Exposición Oral (NotebookLM)</div>
+      <div class="prompt-card-preview">
+        Diseña 8 diapositivas estructuradas con título, contenido fisiopatológico, diagramas visuales sugeridos y guion oral de perlas clínicas.
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button class="prompt-copy-btn" onclick="copyMetaPrompt('slides')" style="width: 100%; padding: 10px;">
+          <span>📋</span> Copiar Creador Diapositivas
         </button>
       </div>
     </div>
@@ -1864,6 +2006,17 @@ function getGeminiPromptText(temaNombre) {
 Prioriza fuentes como libros de texto mayores (Harrison, Robbins, Guyton) y guías científicas actualizadas.`;
 }
 
+function getSocraticPromptText(temaNombre) {
+  return `Actúa como un tutor de medicina socrático y exigente. Tu objetivo es guiarme para entender a fondo ${temaNombre} a través de un caso clínico interactivo:
+
+1. Preséntame únicamente la viñeta clínica inicial (edad, sexo, antecedentes relevantes, síntoma principal) y espera mi respuesta.
+2. Hazme preguntas difíciles una a la vez para guiar mi razonamiento. Debo deducir los signos semiológicos que iría a buscar, qué laboratorios o estudios de imagen solicitar y el manejo terapéutico inicial.
+3. REGLA OBLIGATORIA: No me des respuestas servidas ni me corrijas de inmediato. Si respondo de forma incompleta o incorrecta, plantéame una pregunta orientadora o contrargumenta fisiopatológicamente para que note el error yo mismo.
+4. Si me atasco dos veces, dame una pista sutil, no la respuesta.
+
+Comienza con el caso clínico.`;
+}
+
 function getNotebookPromptText(temaNombre) {
   return `Actúa como un sintetizador de evidencia médica sobre mis fuentes cargadas respecto a ${temaNombre}. Organiza mis PDFs para generar:
 
@@ -1873,6 +2026,17 @@ function getNotebookPromptText(temaNombre) {
 4. TRATAMIENTO RAZONADO: Medidas y fármacos indicando el punto exacto de la cascada que corrigen o interrumpe cada intervención.
 5. DIAGNÓSTICO DIFERENCIAL (INTERLEAVING): Comparación con 2-3 patologías similares.
 6. CASO CLÍNICO INTERACTIVO Y RECUPERACIÓN ACTIVA: Caso con preguntas de razonamiento antes de responder y 8 preguntas de recuperación activa sobre mis fuentes.`;
+}
+
+function getSlidesPromptText(temaNombre) {
+  return `Actúa como un diseñador de diapositivas médicas y docente clínico. Genera una estructura detallada de 8 diapositivas basadas en mis fuentes cargadas sobre ${temaNombre} para una exposición académica de pases de visita. Estructura cada diapositiva indicando:
+
+1. TÍTULO DE LA DIAPOSITIVA: Nombre claro y enfoque.
+2. SÍNTESIS FISIOPATOLÓGICA/CLÍNICA: Texto conciso y directo para colocar en la pantalla.
+3. TABLAS/DIAGRAMAS CONCEPTUALES SUGERIDOS: Ideas visuales detalladas para representar los datos.
+4. PERLAS CLÍNICAS Y EXPLICACIÓN ORAL: Guion corto de lo que debo exponer verbalmente, resaltando datos atípicos o preguntas del adjunto.
+
+Sigue un flujo lógico desde la fisiopatología core, semiología, diagnóstico, tratamiento, hasta las conclusiones del tema.`;
 }
 
 function copyText(text) {
@@ -1896,18 +2060,22 @@ function copyMetaPrompt(type) {
   let text = '';
   if (type === 'gemini') {
     text = getGeminiPromptText(temaNombre);
+  } else if (type === 'socratic') {
+    text = getSocraticPromptText(temaNombre);
   } else if (type === 'notebook') {
     text = getNotebookPromptText(temaNombre);
+  } else if (type === 'slides') {
+    text = getSlidesPromptText(temaNombre);
   } else if (type === 'completo') {
-    text = `=== PROMPT PARA GEMINI (Estudio Interactivo) ===\n${getGeminiPromptText(temaNombre)}\n\n=== PROMPT PARA NOTEBOOKLM (Análisis de PDFs) ===\n${getNotebookPromptText(temaNombre)}`;
+    text = `=== PROMPT PARA GEMINI ESTÁNDAR ===\n${getGeminiPromptText(temaNombre)}\n\n=== PROMPT TUTOR SOCRÁTICO EXIGENTE ===\n${getSocraticPromptText(temaNombre)}\n\n=== PROMPT PARA NOTEBOOKLM SÍNTESIS ===\n${getNotebookPromptText(temaNombre)}\n\n=== PROMPT CREADOR DE DIAPOSITIVAS ===\n${getSlidesPromptText(temaNombre)}`;
   }
   
   copyText(text);
 }
 
-function abrirGeminiMetaTab() {
+function abrirGeminiMetaTab(type) {
   const temaNombre = window._activeTemaName || '[TEMA ACTUAL]';
-  const prompt = getGeminiPromptText(temaNombre);
+  const prompt = type === 'socratic' ? getSocraticPromptText(temaNombre) : getGeminiPromptText(temaNombre);
   const url = 'https://gemini.google.com/app?q=' + encodeURIComponent(prompt);
   window.open(url, '_blank');
 }
@@ -2074,18 +2242,35 @@ function renderProgreso() {
   // Logros (Medallas)
   const medals = [
     { id: 'primer_resp', icon: '🎖️', name: 'Primer Respondedor', desc: '1 tema dom.' },
-    { id: 'fuego_sost', icon: '🔥', name: 'Fuego Sostenido', desc: 'Racha de 5 días' },
-    { id: 'tejedor_red', icon: '🕸️', name: 'Tejedor de Redes', desc: 'Nodo raíz dom.' },
-    { id: 'modo_guardia', icon: '🌙', name: 'Modo Guardia', desc: 'Modo oscuro' },
+    { id: 'mecanismo_dominado', icon: '🧠', name: 'Mecanismo Dominado', desc: 'Fisiología Core' },
+    { id: 'fuego_implacable', icon: '🔥', name: 'Fuego Implacable', desc: 'Racha 7 días' },
+    { id: 'estudio_rapido', icon: '⚡', name: 'Estudio Rápido', desc: 'Avance hoy' },
+    { id: 'maestro_bloque', icon: '👑', name: 'Maestro de Bloque', desc: '100% especialidad' },
+    { id: 'guardian_nocturno', icon: '🛡️', name: 'Guardián Nocturno', desc: 'Estudio nocturno' },
     { id: 'portador_saber', icon: '🔗', name: 'Portador Saber', desc: 'Link generado' }
   ];
+
+  // Helper for maestro de bloque
+  const isMaestroDeBloque = () => {
+    const activeTemas = getAllTemas();
+    const specsList = getAllEspecialidades().filter(s => s.id !== 'intro');
+    for (const spec of specsList) {
+      const temasSpec = activeTemas.filter(t => t.spec === spec.id);
+      if (temasSpec.length > 0 && temasSpec.every(t => getTemaEstado(t.id) === 'dominado')) {
+        return true;
+      }
+    }
+    return false;
+  };
 
   // Evaluar estados
   const medalsUnlocked = {
     primer_resp: STATE.completados.length >= 1,
-    fuego_sost: racha >= 5,
-    tejedor_red: isTejedorDeRedes(),
-    modo_guardia: !!STATE.guardiaNocturna,
+    mecanismo_dominado: STATE.completados.includes('i_fisio') && STATE.completados.includes('i_medio') && STATE.completados.includes('i_farma'),
+    fuego_implacable: racha >= 7,
+    estudio_rapido: !!window._hasStudiedThisSession || (STATE.heatmap[hoy] || 0) > 0,
+    maestro_bloque: isMaestroDeBloque(),
+    guardian_nocturno: !!STATE.guardianNocturno,
     portador_saber: !!STATE.linkGenerado
   };
 
@@ -2201,6 +2386,21 @@ function renderConfig() {
     </div>
   `;
 
+  const temarioSelectorCardHtml = `
+    <div class="card" style="margin-bottom: 16px; padding: 16px;">
+      <div class="section-label" style="margin-top:0;">Plan de Estudio / Rotación</div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="font-size: 12.5px; color: var(--text2); line-height: 1.5; margin-bottom: 6px;">
+          Alterna entre el Temario Completo original de medicina general o el Temario Resumido enfocado en tu rotación de Medicina Interna.
+        </div>
+        <select class="field-select" style="font-size: 13px; padding: 10px;" onchange="setTemarioActivo(this.value)">
+          <option value="completo" ${STATE.temarioActivo === 'completo' ? 'selected' : ''}>🎯 Temario Completo (General)</option>
+          <option value="interna" ${STATE.temarioActivo === 'interna' ? 'selected' : ''}>🩺 Medicina Interna (Rotación de 49 Temas)</option>
+        </select>
+      </div>
+    </div>
+  `;
+
   const themeOptions = [
     { value: 'lila', label: '🟣 Lila Clínico (Original)' },
     { value: 'nocturna', label: '🌙 Guardia Nocturna (Oscuro)' },
@@ -2275,6 +2475,7 @@ function renderConfig() {
     </div>
     <div class="page-sub">Panel de Mandos — Gestión del Plan y Preferencias</div>
 
+    ${temarioSelectorCardHtml}
     ${specialtySelectorCardHtml}
     ${themeSelectorHtml}
 
@@ -2420,6 +2621,16 @@ function setTheme(themeName) {
     'menta': 'Menta Quirófano 🟢'
   };
   showToast(`Tema cambiado: ${displayNames[themeName] || themeName}`);
+}
+
+function setTemarioActivo(val) {
+  STATE.temarioActivo = val;
+  saveState();
+  if (currentScreen === 'plan') renderScreen('plan');
+  if (currentScreen === 'inicio') renderScreen('inicio');
+  if (currentScreen === 'config') renderScreen('config');
+  if (currentScreen === 'progreso') renderScreen('progreso');
+  showToast(`Temario cambiado a: ${val === 'interna' ? 'Medicina Interna 🩺' : 'Completo 🎯'}`);
 }
 
 function applyTheme() {
@@ -2612,6 +2823,7 @@ getAllTemasRaw().forEach(t => {
 
 MEDIC_META.forEach((s, i) => { openMedicSteps[s.key] = i === 0; });
 
+window._hasStudiedThisSession = false;
 initDarkMode();
 renderScreen('inicio');
 </script>
