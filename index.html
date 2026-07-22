@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#FAF7FD">
-<title>MedOS — Plan 90 días</title>
+<title>MedOS — Sinapsis Médica</title>
 
 <!-- Soporte PWA y Apple standalone -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -60,7 +60,39 @@
   --trans: 180ms cubic-bezier(.4,0,.2,1);
 }
 
-body.dark-mode {
+body.theme-lila {
+  --bg:        #FAF7FD;
+  --s1:        #FFFFFF;
+  --s2:        #F5F0FA;
+  --s3:        #ECE3F5;
+  --border:    #E8DFF2;
+  --border2:   #DCCFEC;
+
+  --text:      #3E3757;
+  --text2:     #948BAE;
+  --text3:     #B9B0CE;
+
+  --accent:    #B4A2F5;
+  --accent2:   #9885EE;
+  --accent-dim:#B4A2F522;
+  --accent-glow: 0 6px 20px #B4A2F540;
+
+  --green:     #8FDBB6;
+  --green-dim: #8FDBB630;
+  --yellow:    #F7CE8A;
+  --yellow-dim:#F7CE8A30;
+  --red:       #F5A7AE;
+  --red-dim:   #F5A7AE30;
+  --blue:      #A3D4F2;
+  --blue-dim:  #A3D4F230;
+
+  --green-ink: #4FA97D;
+  --yellow-ink:#C98A2E;
+  --red-ink:   #D9707E;
+  --blue-ink:  #4E9BC7;
+}
+
+body.theme-nocturna {
   --bg:        #0E0B16;
   --s1:        #181424;
   --s2:        #231F35;
@@ -90,6 +122,38 @@ body.dark-mode {
   --yellow-ink:#F7CE8A;
   --red-ink:   #F5A7AE;
   --blue-ink:  #A3D4F2;
+}
+
+body.theme-menta {
+  --bg:        #F2FAF6;
+  --s1:        #FFFFFF;
+  --s2:        #E6F4ED;
+  --s3:        #D8EBE1;
+  --border:    #D5ECD3;
+  --border2:   #C4E2C2;
+
+  --text:      #2A4237;
+  --text2:     #6D8D7E;
+  --text3:     #9ABCB0;
+
+  --accent:    #5CB895;
+  --accent2:   #3E9D78;
+  --accent-dim:#5CB89522;
+  --accent-glow: 0 6px 20px #5CB89535;
+
+  --green:     #8FDBB6;
+  --green-dim: #8FDBB630;
+  --yellow:    #F7CE8A;
+  --yellow-dim:#F7CE8A30;
+  --red:       #F5A7AE;
+  --red-dim:   #F5A7AE30;
+  --blue:      #A3D4F2;
+  --blue-dim:  #A3D4F230;
+
+  --green-ink: #2D7754;
+  --yellow-ink:#9E6E1A;
+  --red-ink:   #B84C58;
+  --blue-ink:  #2D6B8F;
 }
 
 
@@ -900,6 +964,7 @@ const DEFAULT_STATE = {
   temaOverrides: {},     // temaId -> { nombre, dif, prio, timeMin, spec, activo }
   customTemas: [],       // temas agregados por el usuario
   customEspecialidades: [], // módulos agregados por el usuario
+  theme: 'lila',          // 'lila' | 'nocturna' | 'menta'
 };
 
 let STATE = JSON.parse(localStorage.getItem('medos4_state') || 'null') || JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -1290,6 +1355,7 @@ function renderInicio() {
   const totalTemas = allTemas.length;
   const dominados = allTemas.filter(t => getTemaEstado(t.id) === 'dominado').length;
   const pct = totalTemas ? Math.round((dominados / totalTemas) * 100) : 0;
+  const pendientes = totalTemas - dominados;
 
   // Streak calculation for header
   const hoy = new Date().toISOString().split('T')[0];
@@ -1310,6 +1376,19 @@ function renderInicio() {
     </div>
   `;
 
+  // Barra de Homeostasis compacta en pantalla de Inicio
+  const homeostasisBarHtml = `
+    <div style="margin-bottom: 14px; padding: 10px 12px; background: var(--s1); border: 1px solid var(--border); border-radius: var(--r-md);">
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; margin-bottom: 6px;">
+        <span>Homeostasis de Estudio</span>
+        <span style="color: var(--accent2);">${pct}%</span>
+      </div>
+      <div style="height: 6px; background: var(--s2); border-radius: 3px; overflow: hidden; border: 1px solid var(--border);">
+        <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px;"></div>
+      </div>
+    </div>
+  `;
+
   const tema = getTemaDelDia();
   if (!tema) {
     const isFiltered = STATE.especialidadActiva !== 'todas';
@@ -1324,17 +1403,18 @@ function renderInicio() {
           <span class="${rachaClass}" style="font-size:15px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:2px;" onclick="goTo('progreso')" title="Racha de estudio">
             ${rachaVal}🔥
           </span>
-          <div class="inicio-day-badge">DÍA ${STATE.dia} / 90</div>
+          <div class="inicio-day-badge">Pendientes: ${pendientes}</div>
         </div>
       </div>
 
-      <div class="ecg-line">
+      <div class="ecg-line" style="margin-bottom: 8px;">
         <svg width="100%" height="36" viewBox="0 0 360 36" preserveAspectRatio="none">
           <path class="ecg-path" d="M0,18 L40,18 L50,18 L55,4 L60,32 L65,10 L72,18 L120,18 L125,18 L130,4 L135,32 L140,10 L147,18 L200,18 L205,18 L210,4 L215,32 L220,10 L227,18 L280,18 L285,18 L290,4 L295,32 L300,10 L307,18 L360,18"
             fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
 
+      ${homeostasisBarHtml}
       ${activeSpecSelectorHtml}
 
       <div class="card" style="text-align:center;padding:40px 16px; font-size:13px; color:var(--text2);">${noTemasMsg}</div>
@@ -1359,17 +1439,18 @@ function renderInicio() {
         <span class="${rachaClass}" style="font-size:15px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:2px;" onclick="goTo('progreso')" title="Racha de estudio">
           ${rachaVal}🔥
         </span>
-        <div class="inicio-day-badge">DÍA ${STATE.dia} / 90</div>
+        <div class="inicio-day-badge">Pendientes: ${pendientes}</div>
       </div>
     </div>
 
-    <div class="ecg-line">
+    <div class="ecg-line" style="margin-bottom: 8px;">
       <svg width="100%" height="36" viewBox="0 0 360 36" preserveAspectRatio="none">
         <path class="ecg-path" d="M0,18 L40,18 L50,18 L55,4 L60,32 L65,10 L72,18 L120,18 L125,18 L130,4 L135,32 L140,10 L147,18 L200,18 L205,18 L210,4 L215,32 L220,10 L227,18 L280,18 L285,18 L290,4 L295,32 L300,10 L307,18 L360,18"
           fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
 
+    ${homeostasisBarHtml}
     ${activeSpecSelectorHtml}
 
     <!-- HERO CARD: ESTADO DE FLOW CON BOTÓN PLAY GIGANTE -->
@@ -1772,22 +1853,26 @@ function renderPrompts() {
 
 function getGeminiPromptText(temaNombre) {
   return `Actúa como un internista experto y profesor de medicina. Explícame el tema ${temaNombre} siguiendo estrictamente este orden:
-1. FISIOPATOLOGÍA COMO CADENA CAUSAL: Explica el mecanismo paso a paso (estímulo inicial → alteración cellular/tisular → respuesta sistémica → manifestación clínica → complicación).
-2. SEMIOLOGÍA Y RAZONAMIENTO CLÍNICO: ¿Qué hallazgos semiológicos específicos (síntomas y signos al examen físico) debo ir a buscar activamente y cómo los explica el mecanismo fisiopatológico? Separa los datos deducibles de los datos a memorizar.
-3. TRATAMIENTO RAZONADO: Explica el tratamiento indicando qué punto exacto de la cascada fisiopatológica interrumpe o corrige cada fármaco/medida.
-4. DIAGNÓSTICO DIFERENCIAL (INTERLEAVING): Compáralo con 2-3 diagnósticos similares resaltando el hallazgo semiológico o mecanismo clave para distinguirlos.
-5. CASO CLÍNICO INTERACTIVO: Presenta un caso clínico corto y hazme preguntas de razonamiento semiológico y terapéutico antes de dar las respuestas.
-6. RECUPERACIÓN ACTIVA: Finaliza con 5-8 preguntas de autoevaluación sin opción múltiple para reconstruir la cadena causal de memoria.
+
+1. FISIOPATOLOGÍA COMO CADENA CAUSAL: Mecanismo paso a paso (estímulo → alteración celular → respuesta sistémica → manifestación).
+2. SEMIOLOGÍA Y RAZONAMIENTO CLÍNICO: Hallazgos semiológicos a buscar activamente en el examen físico y síntomas clave explicados por el mecanismo.
+3. CRITERIOS DIAGNÓSTICOS Y ESTUDIOS COMPLEMENTARIOS: Cómo se confirma el diagnóstico, qué exámenes de laboratorio/imagen solicitar y la justificación fisiopatológica de cada hallazgo alterado.
+4. TRATAMIENTO RAZONADO: Medidas y fármacos indicando el punto exacto de la cascada que corrigen o interrumpe cada intervención.
+5. DIAGNÓSTICO DIFERENCIAL (INTERLEAVING): Comparación con 2-3 patologías similares.
+6. CASO CLÍNICO INTERACTIVO Y RECUPERACIÓN ACTIVA: Caso con preguntas de razonamiento antes de responder y 5-8 preguntas de memoria activa.
+
 Prioriza fuentes como libros de texto mayores (Harrison, Robbins, Guyton) y guías científicas actualizadas.`;
 }
 
 function getNotebookPromptText(temaNombre) {
   return `Actúa como un sintetizador de evidencia médica sobre mis fuentes cargadas respecto a ${temaNombre}. Organiza mis PDFs para generar:
-1. Cadena Causal Fisiopatológica en texto estructurado.
-2. Guía Semiológica: Tabla con los signos/síntomas clave que debo buscar en el examen físico y su justificación patofisiológica.
-3. Esquema de Tratamiento basado en guías: fármaco/medida y el mecanismo que bloquea.
-4. Tabla Comparativa con 2-3 diagnósticos diferenciales basada en la semiología clave.
-5. Set de 8 preguntas de recuperación activa sobre mis fuentes.`;
+
+1. FISIOPATOLOGÍA COMO CADENA CAUSAL: Mecanismo paso a paso (estímulo → alteración celular → respuesta sistémica → manifestación).
+2. SEMIOLOGÍA Y RAZONAMIENTO CLÍNICO: Hallazgos semiológicos a buscar activamente en el examen físico y síntomas clave explicados por el mecanismo.
+3. CRITERIOS DIAGNÓSTICOS Y ESTUDIOS COMPLEMENTARIOS: Cómo se confirma el diagnóstico, qué exámenes de laboratorio/imagen solicitar y la justificación fisiopatológica de cada hallazgo alterado.
+4. TRATAMIENTO RAZONADO: Medidas y fármacos indicando el punto exacto de la cascada que corrigen o interrumpe cada intervención.
+5. DIAGNÓSTICO DIFERENCIAL (INTERLEAVING): Comparación con 2-3 patologías similares.
+6. CASO CLÍNICO INTERACTIVO Y RECUPERACIÓN ACTIVA: Caso con preguntas de razonamiento antes de responder y 8 preguntas de recuperación activa sobre mis fuentes.`;
 }
 
 function copyText(text) {
@@ -1906,9 +1991,7 @@ function renderProgreso() {
   const temas = getAllTemas();
   const totalTemas = temas.length;
   const dominados = temas.filter(t => getTemaEstado(t.id) === 'dominado').length;
-  
-  const rawDiasRestantes = 90 - STATE.dia + 1;
-  const diasRestantes = isNaN(rawDiasRestantes) ? 90 : Math.max(rawDiasRestantes, 0);
+  const pendientes = totalTemas - dominados;
   
   const racha = calcRacha();
   const horas = calcHorasEstudiadas();
@@ -1941,7 +2024,7 @@ function renderProgreso() {
         <div style="height: 100%; width: ${pctHomeostasis}%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 5px; transition: width 0.6s ease-out;"></div>
       </div>
       <div style="font-size: 11px; color: var(--text3); margin-top: 6px;">
-        ${dominados} de ${totalTemas} temas dominados y estabilizados en tu plan de 90 días.
+        ${dominados} de ${totalTemas} temas dominados y estabilizados en tu temario activo.
       </div>
     </div>
   `;
@@ -2058,8 +2141,8 @@ function renderProgreso() {
         <div class="progress-big-label">Racha (días)</div>
       </div>
       <div class="progress-big-card">
-        <div class="progress-big-num" style="color:var(--accent2);">${diasRestantes}</div>
-        <div class="progress-big-label">Días restantes</div>
+        <div class="progress-big-num" style="color:var(--accent2);">${pendientes}</div>
+        <div class="progress-big-label">Temas pendientes</div>
       </div>
     </div>
 
@@ -2120,9 +2203,9 @@ function renderConfig() {
 
   const themeOptions = [
     { value: 'lila', label: '🟣 Lila Clínico (Original)' },
-    { value: 'guardia', label: '🌙 Guardia Nocturna (Oscuro)' },
+    { value: 'nocturna', label: '🌙 Guardia Nocturna (Oscuro)' },
     { value: 'menta', label: '🟢 Menta Quirófano (Verde Suave)' }
-  ].map(opt => `<option value="${opt.value}" ${STATE.temaVisual === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('');
+  ].map(opt => `<option value="${opt.value}" ${(STATE.theme || 'lila') === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('');
 
   const themeSelectorHtml = `
     <div class="card" style="margin-bottom: 16px; padding: 16px;">
@@ -2131,7 +2214,7 @@ function renderConfig() {
         <div style="font-size: 12.5px; color: var(--text2); line-height: 1.5; margin-bottom: 6px;">
           Selecciona una paleta adaptada para mitigar la fatiga visual según tu entorno de estudio.
         </div>
-        <select class="field-select" style="font-size: 13px; padding: 10px;" onchange="setTemaVisual(this.value)">
+        <select class="field-select" style="font-size: 13px; padding: 10px;" onchange="setTheme(this.value)">
           ${themeOptions}
         </select>
       </div>
@@ -2326,12 +2409,30 @@ function showToast(msg) {
 // MODO GUARDIA (DARK MODE)
 // ═══════════════════════════════════════════════════════════════════════════
 
-function setTemaVisual(themeName) {
-  STATE.temaVisual = themeName;
+function setTheme(themeName) {
+  STATE.theme = themeName;
   saveState();
   applyTheme();
   if (currentScreen === 'config') renderScreen('config');
-  showToast(`Tema cambiado: ${themeName === 'guardia' ? 'Guardia Nocturna 🌙' : themeName === 'menta' ? 'Menta Quirófano 🟢' : 'Lila Clínico 🟣'}`);
+  const displayNames = {
+    'lila': 'Lila Clínico 🟣',
+    'nocturna': 'Guardia Nocturna 🌙',
+    'menta': 'Menta Quirófano 🟢'
+  };
+  showToast(`Tema cambiado: ${displayNames[themeName] || themeName}`);
+}
+
+function applyTheme() {
+  const themeName = STATE.theme || 'lila';
+  document.body.classList.remove('theme-lila', 'theme-nocturna', 'theme-menta');
+  document.body.classList.add('theme-' + themeName);
+  
+  const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeColorMeta) {
+    if (themeName === 'nocturna') themeColorMeta.setAttribute('content', '#0E0B16');
+    else if (themeName === 'menta') themeColorMeta.setAttribute('content', '#F2FAF6');
+    else themeColorMeta.setAttribute('content', '#FAF7FD');
+  }
 }
 
 function initDarkMode() {
