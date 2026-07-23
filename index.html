@@ -1,3 +1,80 @@
+const ID_MIGRATION_MAP = {
+  // Completo
+  'c01': 'cardio_fisio', 'c02': 'cardio_icc', 'c03': 'cardio_coronario', 'c04': 'cardio_arritmias',
+  'c05': 'cardio_hta', 'c06': 'cardio_valvulo', 'c07': 'cardio_pericarditis', 'c08': 'cardio_miocardio',
+  'c09': 'cardio_tep', 'c10': 'cardio_shock',
+  'n01': 'neumo_fisio', 'n02': 'neumo_epoc', 'n03': 'neumo_asma', 'n04': 'neumo_neumonia',
+  'n05': 'neumo_sdra', 'n06': 'neumo_pleura', 'n07': 'neumo_ht_pulm', 'n08': 'neumo_ir',
+  'nf01': 'nefro_fisio', 'nf02': 'nefro_ira', 'nf03': 'nefro_erc', 'nf04': 'nefro_sodio',
+  'nf05': 'nefro_potasio', 'nf06': 'nefro_acido_base', 'nf07': 'nefro_glomerulo', 'nf08': 'nefro_raas',
+  'g01': 'gastro_hemorragia', 'g02': 'gastro_hepatitis', 'g03': 'gastro_cirrosis', 'g04': 'gastro_portal',
+  'g05': 'gastro_pancreatitis', 'g06': 'gastro_eii', 'g07': 'gastro_ileo',
+  'e01': 'endo_diabetes', 'e02': 'endo_cetoacidosis', 'e03': 'endo_hipoglucemias', 'e04': 'endo_tiroides',
+  'e05': 'endo_crisis_tiro', 'e06': 'endo_crisis_adrenal', 'e07': 'endo_cushing', 'e08': 'endo_calcio',
+  'h01': 'hema_fisio', 'h02': 'hema_anemias', 'h03': 'hema_trombocitopenias', 'h04': 'hema_cid',
+  'h05': 'hema_leucemias',
+  'i01': 'infecto_fisio', 'i02': 'crit_sepsis', 'i03': 'infecto_antibioticos', 'i04': 'infecto_itu',
+  'i05': 'cardio_endocarditis', 'i06': 'infecto_meningitis', 'i07': 'infecto_inmunocomp', 'i08': 'infecto_vih',
+  'ne01': 'neuro_fisio', 'ne02': 'neuro_ecv', 'ne03': 'neuro_convulsivo', 'ne04': 'neuro_encefalopatia',
+  'ne05': 'neuro_neuropatias', 'ne06': 'neuro_neuromuscular',
+  'r01': 'reuma_les', 'r02': 'reuma_ar', 'r03': 'reuma_vasculitis', 'r04': 'reuma_gota',
+  'f01': 'farm_fisio', 'f02': 'farm_cv', 'f03': 'farm_anticoag', 'f04': 'farm_corticoides', 'f05': 'farm_analgesia',
+  
+  // Resumido
+  'card_fisio': 'cardio_fisio', 'card_icc': 'cardio_icc', 'card_chagas': 'cardio_chagas',
+  'card_reumatica': 'cardio_reumatica', 'card_hta': 'cardio_hta', 'card_valvulo': 'cardio_valvulo',
+  'card_arritmias': 'cardio_arritmias', 'card_endocarditis': 'cardio_endocarditis', 'card_coronario': 'cardio_coronario',
+  'neumo_tep': 'cardio_tep', 'neumo_neumonias': 'neumo_neumonia', 'hema_vih': 'infecto_vih',
+  'neuro_meningitis': 'infecto_meningitis'
+};
+
+function migrateStateIds(state) {
+  if (!state || typeof state !== 'object') return;
+  if (state.completados && (!state.completedTopics || state.completedTopics.length === 0)) {
+    state.completedTopics = state.completados;
+  }
+  if (state.completedTopics) {
+    state.completedTopics = state.completedTopics.map(id => ID_MIGRATION_MAP[id] || id);
+    state.completedTopics = [...new Set(state.completedTopics)].filter(id => !['i_fisio','i_medio','i_farma'].includes(id));
+  }
+  if (state.estados) {
+    const newEstados = {};
+    for (const k in state.estados) {
+      const newKey = ID_MIGRATION_MAP[k] || k;
+      if (!['i_fisio','i_medio','i_farma'].includes(newKey)) {
+        newEstados[newKey] = state.estados[k];
+      }
+    }
+    state.estados = newEstados;
+  }
+  if (state.medicSteps) {
+    const newSteps = {};
+    for (const k in state.medicSteps) {
+      const newKey = ID_MIGRATION_MAP[k] || k;
+      if (!['i_fisio','i_medio','i_farma'].includes(newKey)) {
+        newSteps[newKey] = state.medicSteps[k];
+      }
+    }
+    state.medicSteps = newSteps;
+  }
+  if (state.notas) {
+    const newNotas = {};
+    for (const k in state.notas) {
+      const newKey = ID_MIGRATION_MAP[k] || k;
+      if (!['i_fisio','i_medio','i_farma'].includes(newKey)) {
+        newNotas[newKey] = state.notas[k];
+      }
+    }
+    state.notas = newNotas;
+  }
+  if (state.activeTema) {
+    state.activeTema = ID_MIGRATION_MAP[state.activeTema] || state.activeTema;
+    if (['i_fisio','i_medio','i_farma'].includes(state.activeTema)) {
+      state.activeTema = null;
+    }
+  }
+}
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -844,7 +921,6 @@ input, textarea, select { font-family: inherit; }
 // ═══════════════════════════════════════════════════════════════════════════
 
 const ESPECIALIDADES = [
-  { id: 'intro',    name: 'Fisiología Core',      color: '#D7E29B', emoji: '🧬' },
   { id: 'cardio',   name: 'Cardiología',          color: '#F5A9B8', emoji: '🫀' },
   { id: 'neumo',    name: 'Neumología',           color: '#A8D8F0', emoji: '🫁' },
   { id: 'nefro',    name: 'Nefrología',           color: '#B8A9F0', emoji: '💧' },
@@ -860,105 +936,100 @@ const ESPECIALIDADES = [
 
 // dif: dificultad 1-5 | prio: A=alta/B=media/C=baja | deps: dependencias conceptuales
 const TEMAS = [
-  // BLOQUE 0: INTRODUCCIÓN Y FISIOLOGÍA CORE
-  { id:'i_fisio', spec:'intro', nombre:'Principios de Fisiopatología y Homeostasis', dif:2, prio:'A', deps:[], unlock:['i_medio','i_farma'] },
-  { id:'i_medio', spec:'intro', nombre:'Medio Interno, Electrólitos y Equilibrio Ácido-Base', dif:3, prio:'A', deps:['i_fisio'], unlock:['i_farma'] },
-  { id:'i_farma', spec:'intro', nombre:'Farmacoterapia y Medicamentos de Uso Frecuente en Medicina Interna', dif:3, prio:'A', deps:['i_medio'], unlock:['c01','n01','nf01','gastro_fisio','endo_fisio','h01','i01','ne01','reuma_fisio','f01','crit_fisio'] },
-
   // CARDIOLOGÍA
-  { id:'c01', spec:'cardio', nombre:'Fisiología Cardíaca y Mecanismos de Falla', dif:2, prio:'A', deps:['i_farma'], unlock:['c02','c03','c04','c05','c06','n01','nf01'] },
-  { id:'c02', spec:'cardio', nombre:'Insuficiencia cardíaca (sistólica y diastólica)', dif:4, prio:'A', deps:['c01'], unlock:['c06','nf02','nf05'] },
-  { id:'c03', spec:'cardio', nombre:'Síndrome coronario agudo (SCASEST y SCACEST)', dif:5, prio:'A', deps:['c01'], unlock:['c04'] },
-  { id:'c04', spec:'cardio', nombre:'Arritmias y trastornos de la conducción', dif:4, prio:'A', deps:['c01','c03'], unlock:[] },
-  { id:'c05', spec:'cardio', nombre:'Hipertensión arterial y daño de órgano blanco', dif:3, prio:'A', deps:['c01'], unlock:['nf01','e01'] },
-  { id:'c06', spec:'cardio', nombre:'Valvulopatías y cardiopatías estructurales', dif:4, prio:'B', deps:['c01','c02'], unlock:[] },
-  { id:'c07', spec:'cardio', nombre:'Pericarditis, derrame pericárdico y taponamiento', dif:3, prio:'B', deps:['c01'], unlock:[] },
-  { id:'c08', spec:'cardio', nombre:'Miocarditis y miocardiopatías', dif:4, prio:'B', deps:['c01','c02'], unlock:[] },
-  { id:'c09', spec:'cardio', nombre:'Tromboembolismo pulmonar y trombosis venosa profunda', dif:4, prio:'A', deps:['c01','n01','h01'], unlock:[] },
-  { id:'c10', spec:'cardio', nombre:'Shock: tipos y manejo fisiopatológico', dif:5, prio:'A', deps:['c01','c02'], unlock:['i02'] },
+  { id:'cardio_fisio', spec:'cardio', nombre:'Principios de Fisiología y Fisiopatología Cardíaca', dif:2, prio:'A', deps:[], unlock:[] },
+  { id:'cardio_icc', spec:'cardio', nombre:'Insuficiencia cardíaca (sistólica y diastólica)', dif:4, prio:'A', deps:['cardio_fisio'], unlock:[] },
+  { id:'cardio_coronario', spec:'cardio', nombre:'Síndrome coronario agudo (SCASEST y SCACEST)', dif:5, prio:'A', deps:['cardio_fisio'], unlock:[] },
+  { id:'cardio_arritmias', spec:'cardio', nombre:'Arritmias y trastornos de la conducción', dif:4, prio:'A', deps:['cardio_fisio','cardio_coronario'], unlock:[] },
+  { id:'cardio_hta', spec:'cardio', nombre:'Hipertensión arterial y daño de órgano blanco', dif:3, prio:'A', deps:['cardio_fisio'], unlock:[] },
+  { id:'cardio_valvulo', spec:'cardio', nombre:'Valvulopatías y cardiopatías estructurales', dif:4, prio:'B', deps:['cardio_fisio','cardio_icc'], unlock:[] },
+  { id:'cardio_pericarditis', spec:'cardio', nombre:'Pericarditis, derrame pericárdico y taponamiento', dif:3, prio:'B', deps:['cardio_fisio'], unlock:[] },
+  { id:'cardio_miocardio', spec:'cardio', nombre:'Miocarditis y miocardiopatías', dif:4, prio:'B', deps:['cardio_fisio','cardio_icc'], unlock:[] },
+  { id:'cardio_tep', spec:'cardio', nombre:'Tromboembolismo pulmonar y trombosis venosa profunda', dif:4, prio:'A', deps:['cardio_fisio','neumo_fisio','hema_fisio'], unlock:[] },
+  { id:'cardio_shock', spec:'cardio', nombre:'Shock: tipos y manejo fisiopatológico', dif:5, prio:'A', deps:['cardio_fisio','cardio_icc'], unlock:[] },
 
   // NEUMOLOGÍA
-  { id:'n01', spec:'neumo', nombre:'Fisiología Respiratoria y Control Ventilatorio', dif:2, prio:'A', deps:['i_farma'], unlock:['n02','n03','n04','n05','n06','c09'] },
-  { id:'n02', spec:'neumo', nombre:'EPOC: fisiopatología y exacerbaciones', dif:4, prio:'A', deps:['n01'], unlock:[] },
-  { id:'n03', spec:'neumo', nombre:'Asma bronquial y broncoespasmo', dif:3, prio:'A', deps:['n01'], unlock:[] },
-  { id:'n04', spec:'neumo', nombre:'Neumonía adquirida en la comunidad y hospitalaria', dif:3, prio:'A', deps:['n01','i01'], unlock:[] },
-  { id:'n05', spec:'neumo', nombre:'Síndrome de dificultad respiratoria aguda (SDRA)', dif:5, prio:'A', deps:['n01','i02'], unlock:[] },
-  { id:'n06', spec:'neumo', nombre:'Derrame pleural: trasudado vs exudado', dif:3, prio:'B', deps:['n01','c02'], unlock:[] },
-  { id:'n07', spec:'neumo', nombre:'Hipertensión pulmonar', dif:4, prio:'B', deps:['n01','c01'], unlock:[] },
-  { id:'n08', spec:'neumo', nombre:'Insuficiencia respiratoria aguda y crónica', dif:4, prio:'A', deps:['n01','n02'], unlock:[] },
+  { id:'neumo_fisio', spec:'neumo', nombre:'Fisiología Respiratoria y Control Ventilatorio', dif:2, prio:'A', deps:[], unlock:[] },
+  { id:'neumo_epoc', spec:'neumo', nombre:'EPOC: fisiopatología y exacerbaciones', dif:4, prio:'A', deps:['neumo_fisio'], unlock:[] },
+  { id:'neumo_asma', spec:'neumo', nombre:'Asma bronquial y broncoespasmo', dif:3, prio:'A', deps:['neumo_fisio'], unlock:[] },
+  { id:'neumo_neumonia', spec:'neumo', nombre:'Neumonía adquirida en la comunidad y hospitalaria', dif:3, prio:'A', deps:['neumo_fisio','infecto_fisio'], unlock:[] },
+  { id:'neumo_sdra', spec:'neumo', nombre:'Síndrome de dificultad respiratoria aguda (SDRA)', dif:5, prio:'A', deps:['neumo_fisio','crit_sepsis'], unlock:[] },
+  { id:'neumo_pleura', spec:'neumo', nombre:'Derrame pleural: trasudado vs exudado', dif:3, prio:'B', deps:['neumo_fisio','cardio_icc'], unlock:[] },
+  { id:'neumo_ht_pulm', spec:'neumo', nombre:'Hipertensión pulmonar', dif:4, prio:'B', deps:['neumo_fisio','cardio_fisio'], unlock:[] },
+  { id:'neumo_ir', spec:'neumo', nombre:'Insuficiencia respiratoria aguda y crónica', dif:4, prio:'A', deps:['neumo_fisio','neumo_epoc'], unlock:[] },
 
   // NEFROLOGÍA
-  { id:'nf01', spec:'nefro', nombre:'Fisiología Renal y Regulación del Volumen', dif:2, prio:'A', deps:['i_farma'], unlock:['nf02','nf03','nf04','nf05','nf06'] },
-  { id:'nf02', spec:'nefro', nombre:'Lesión renal aguda: prerrenal, renal y posrenal', dif:4, prio:'A', deps:['nf01','c01'], unlock:['nf03'] },
-  { id:'nf03', spec:'nefro', nombre:'Enfermedad renal crónica y síndrome urémico', dif:4, prio:'A', deps:['nf01','nf02'], unlock:[] },
-  { id:'nf04', spec:'nefro', nombre:'Trastornos del sodio: hiponatremia e hipernatremia', dif:4, prio:'A', deps:['nf01'], unlock:[] },
-  { id:'nf05', spec:'nefro', nombre:'Trastornos del potasio: hipo e hiperpotasemia', dif:3, prio:'A', deps:['nf01'], unlock:[] },
-  { id:'nf06', spec:'nefro', nombre:'Trastornos del equilibrio ácido-base', dif:5, prio:'A', deps:['nf01','n01'], unlock:[] },
-  { id:'nf07', spec:'nefro', nombre:'Síndrome nefrótico y nefrítico', dif:4, prio:'B', deps:['nf01'], unlock:[] },
-  { id:'nf08', spec:'nefro', nombre:'RAAS: fisiología, patología y farmacología', dif:3, prio:'A', deps:['nf01','c05'], unlock:['c02','g03'] },
+  { id:'nefro_fisio', spec:'nefro', nombre:'Principios de Fisiología Renal', dif:2, prio:'A', deps:[], unlock:[] },
+  { id:'nefro_ira', spec:'nefro', nombre:'Lesión renal aguda: prerrenal, renal y posrenal', dif:4, prio:'A', deps:['nefro_fisio','cardio_fisio'], unlock:[] },
+  { id:'nefro_erc', spec:'nefro', nombre:'Enfermedad renal crónica y síndrome urémico', dif:4, prio:'A', deps:['nefro_fisio','nefro_ira'], unlock:[] },
+  { id:'nefro_sodio', spec:'nefro', nombre:'Trastornos del sodio: hiponatremia e hipernatremia', dif:4, prio:'A', deps:['nefro_fisio'], unlock:[] },
+  { id:'nefro_potasio', spec:'nefro', nombre:'Trastornos del potasio: hipo e hiperpotasemia', dif:3, prio:'A', deps:['nefro_fisio'], unlock:[] },
+  { id:'nefro_acido_base', spec:'nefro', nombre:'Trastornos del equilibrio ácido-base', dif:5, prio:'A', deps:['nefro_fisio','neumo_fisio'], unlock:[] },
+  { id:'nefro_glomerulo', spec:'nefro', nombre:'Síndrome nefrótico y nefrítico', dif:4, prio:'B', deps:['nefro_fisio'], unlock:[] },
+  { id:'nefro_raas', spec:'nefro', nombre:'RAAS: fisiología, patología y farmacología', dif:3, prio:'A', deps:['nefro_fisio','cardio_hta'], unlock:[] },
 
   // GASTROENTEROLOGÍA
-  { id:'gastro_fisio', spec:'gastro', nombre:'Fisiología Gastroenterológica y Regulación Digestiva', dif:2, prio:'A', deps:['i_farma'], unlock:['g01','g02','g05','g06','g07'] },
-  { id:'g01', spec:'gastro', nombre:'Hemorragia digestiva alta y baja', dif:3, prio:'A', deps:['gastro_fisio'], unlock:[] },
-  { id:'g02', spec:'gastro', nombre:'Hepatitis aguda y crónica: viral, alcohólica y autoinmune', dif:4, prio:'A', deps:['gastro_fisio'], unlock:['g03','g04'] },
-  { id:'g03', spec:'gastro', nombre:'Cirrosis hepática y síndrome hepatorrenal', dif:5, prio:'A', deps:['g02','nf01'], unlock:['g04'] },
-  { id:'g04', spec:'gastro', nombre:'Hipertensión portal y sus complicaciones', dif:4, prio:'A', deps:['g03','nf08'], unlock:[] },
-  { id:'g05', spec:'gastro', nombre:'Pancreatitis aguda y crónica', dif:3, prio:'A', deps:['gastro_fisio'], unlock:[] },
-  { id:'g06', spec:'gastro', nombre:'Enfermedad inflamatoria intestinal', dif:3, prio:'B', deps:['gastro_fisio'], unlock:[] },
-  { id:'g07', spec:'gastro', nombre:'Íleo, obstrucción intestinal y abdomen agudo', dif:3, prio:'B', deps:['gastro_fisio'], unlock:[] },
+  { id:'gastro_fisio', spec:'gastro', nombre:'Fisiología Gastroenterológica y Regulación Digestiva', dif:2, prio:'A', deps:[], unlock:[] },
+  { id:'gastro_hemorragia', spec:'gastro', nombre:'Hemorragia digestiva alta y baja', dif:3, prio:'A', deps:['gastro_fisio'], unlock:[] },
+  { id:'gastro_hepatitis', spec:'gastro', nombre:'Hepatitis aguda y crónica: viral, alcohólica y autoinmune', dif:4, prio:'A', deps:['gastro_fisio'], unlock:[] },
+  { id:'gastro_cirrosis', spec:'gastro', nombre:'Cirrosis hepática y síndrome hepatorrenal', dif:5, prio:'A', deps:['gastro_hepatitis','nefro_fisio'], unlock:[] },
+  { id:'gastro_portal', spec:'gastro', nombre:'Hipertensión portal y sus complicaciones', dif:4, prio:'A', deps:['gastro_cirrosis','nefro_raas'], unlock:[] },
+  { id:'gastro_pancreatitis', spec:'gastro', nombre:'Pancreatitis aguda y crónica', dif:3, prio:'A', deps:['gastro_fisio'], unlock:[] },
+  { id:'gastro_eii', spec:'gastro', nombre:'Enfermedad inflamatoria intestinal', dif:3, prio:'B', deps:['gastro_fisio'], unlock:[] },
+  { id:'gastro_ileo', spec:'gastro', nombre:'Íleo, obstrucción intestinal y abdomen agudo', dif:3, prio:'B', deps:['gastro_fisio'], unlock:[] },
 
   // ENDOCRINOLOGÍA
-  { id:'endo_fisio', spec:'endo', nombre:'Fisiología Endocrinológica y Ejes Hormonales', dif:2, prio:'A', deps:['i_farma'], unlock:['e01','e04','e06'] },
-  { id:'e01', spec:'endo', nombre:'Diabetes mellitus: tipos, fisiopatología y complicaciones', dif:3, prio:'A', deps:['endo_fisio'], unlock:['e02','e03'] },
-  { id:'e02', spec:'endo', nombre:'Cetoacidosis diabética y estado hiperosmolar', dif:5, prio:'A', deps:['e01','nf06'], unlock:[] },
-  { id:'e03', spec:'endo', nombre:'Hipoglucemia: mecanismos y manejo', dif:3, prio:'A', deps:['e01'], unlock:[] },
-  { id:'e04', spec:'endo', nombre:'Disfunción tiroidea: hipotiroidismo e hipertiroidismo', dif:3, prio:'A', deps:['endo_fisio'], unlock:['e05'] },
-  { id:'e05', spec:'endo', nombre:'Crisis tirotóxica y coma mixedematoso', dif:5, prio:'B', deps:['e04'], unlock:[] },
-  { id:'e06', spec:'endo', nombre:'Insuficiencia suprarrenal y crisis adrenal', dif:4, prio:'B', deps:['endo_fisio'], unlock:[] },
-  { id:'e07', spec:'endo', nombre:'Síndrome de Cushing e hiperaldosteronismo', dif:4, prio:'B', deps:['nf08'], unlock:[] },
-  { id:'e08', spec:'endo', nombre:'Calcio, fósforo y PTH: trastornos clínicos', dif:4, prio:'B', deps:['nf01'], unlock:[] },
+  { id:'endo_fisio', spec:'endo', nombre:'Fisiología Endocrinológica y Ejes Hormonales', dif:2, prio:'A', deps:[], unlock:[] },
+  { id:'endo_diabetes', spec:'endo', nombre:'Diabetes mellitus: tipos, fisiopatología y complicaciones', dif:3, prio:'A', deps:['endo_fisio'], unlock:[] },
+  { id:'endo_cetoacidosis', spec:'endo', nombre:'Cetoacidosis diabética y estado hiperosmolar', dif:5, prio:'A', deps:['endo_diabetes','nefro_acido_base'], unlock:[] },
+  { id:'endo_hipoglucemias', spec:'endo', nombre:'Hipoglucemia: mecanismos y manejo', dif:3, prio:'A', deps:['endo_diabetes'], unlock:[] },
+  { id:'endo_tiroides', spec:'endo', nombre:'Disfunción tiroidea: hipotiroidismo e hipertiroidismo', dif:3, prio:'A', deps:['endo_fisio'], unlock:[] },
+  { id:'endo_crisis_tiro', spec:'endo', nombre:'Crisis tirotóxica y coma mixedematoso', dif:5, prio:'B', deps:['endo_tiroides'], unlock:[] },
+  { id:'endo_crisis_adrenal', spec:'endo', nombre:'Insuficiencia suprarrenal y crisis adrenal', dif:4, prio:'B', deps:['endo_fisio'], unlock:[] },
+  { id:'endo_cushing', spec:'endo', nombre:'Síndrome de Cushing e hiperaldosteronismo', dif:4, prio:'B', deps:['nefro_raas'], unlock:[] },
+  { id:'endo_calcio', spec:'endo', nombre:'Calcio, fósforo y PTH: trastornos clínicos', dif:4, prio:'B', deps:['nefro_fisio'], unlock:[] },
 
   // HEMATOLOGÍA
-  { id:'h01', spec:'hemato', nombre:'Fisiología Hematológica y Hemostasia', dif:3, prio:'A', deps:['i_farma'], unlock:['h02','h03','c09'] },
-  { id:'h02', spec:'hemato', nombre:'Anemias: clasificación fisiopatológica', dif:3, prio:'A', deps:['h01'], unlock:[] },
-  { id:'h03', spec:'hemato', nombre:'Trombocitopenias y coagulopatías', dif:4, prio:'A', deps:['h01'], unlock:[] },
-  { id:'h04', spec:'hemato', nombre:'CID: fisiopatología y diagnóstico diferencial', dif:5, prio:'A', deps:['h01','i02'], unlock:[] },
-  { id:'h05', spec:'hemato', nombre:'Linfomas y leucemias: presentación clínica', dif:4, prio:'B', deps:['h01'], unlock:[] },
+  { id:'hema_fisio', spec:'hemato', nombre:'Fisiología Hematológica y Hemostasia', dif:3, prio:'A', deps:[], unlock:[] },
+  { id:'hema_anemias', spec:'hemato', nombre:'Anemias: clasificación fisiopatológica', dif:3, prio:'A', deps:['hema_fisio'], unlock:[] },
+  { id:'hema_trombocitopenias', spec:'hemato', nombre:'Trombocitopenias y coagulopatías', dif:4, prio:'A', deps:['hema_fisio'], unlock:[] },
+  { id:'hema_cid', spec:'hemato', nombre:'CID: fisiopatología y diagnóstico diferencial', dif:5, prio:'A', deps:['hema_fisio','crit_sepsis'], unlock:[] },
+  { id:'hema_leucemias', spec:'hemato', nombre:'Linfomas y leucemias: presentación clínica', dif:4, prio:'B', deps:['hema_fisio'], unlock:[] },
 
   // INFECTOLOGÍA
-  { id:'i01', spec:'infecto', nombre:'Fisiología Inmunológica e Infección', dif:2, prio:'A', deps:['i_farma'], unlock:['i02','i03','n04'] },
-  { id:'i02', spec:'infecto', nombre:'Sepsis y shock séptico (Sepsis-3)', dif:5, prio:'A', deps:['i01','c01','nf01'], unlock:['i03','h04','n05'] },
-  { id:'i03', spec:'infecto', nombre:'Antibióticos: mecanismos, resistencia y farmacocinética', dif:4, prio:'A', deps:['i01'], unlock:[] },
-  { id:'i04', spec:'infecto', nombre:'Infecciones de vías urinarias complicadas', dif:2, prio:'A', deps:['i01'], unlock:[] },
-  { id:'i05', spec:'infecto', nombre:'Endocarditis infecciosa', dif:4, prio:'A', deps:['i01','c01'], unlock:[] },
-  { id:'i06', spec:'infecto', nombre:'Meningitis y encefalitis', dif:4, prio:'A', deps:['i01','ne01'], unlock:[] },
-  { id:'i07', spec:'infecto', nombre:'Infecciones en el huésped inmunocomprometido', dif:4, prio:'B', deps:['i01'], unlock:[] },
-  { id:'i08', spec:'infecto', nombre:'VIH: fisiopatología, estadificación y TARV', dif:4, prio:'B', deps:['i01'], unlock:[] },
+  { id:'infecto_fisio', spec:'infecto', nombre:'Fisiología Inmunológica e Infección', dif:2, prio:'A', deps:[], unlock:[] },
+  { id:'crit_sepsis', spec:'infecto', nombre:'Sepsis y shock séptico (Sepsis-3)', dif:5, prio:'A', deps:['infecto_fisio','cardio_fisio','nefro_fisio'], unlock:[] },
+  { id:'infecto_antibioticos', spec:'infecto', nombre:'Antibióticos: mecanismos, resistencia y farmacocinética', dif:4, prio:'A', deps:['infecto_fisio'], unlock:[] },
+  { id:'infecto_itu', spec:'infecto', nombre:'Infecciones de vías urinarias complicadas', dif:2, prio:'A', deps:['infecto_fisio'], unlock:[] },
+  { id:'cardio_endocarditis', spec:'infecto', nombre:'Endocarditis infecciosa', dif:4, prio:'A', deps:['infecto_fisio','cardio_fisio'], unlock:[] },
+  { id:'infecto_meningitis', spec:'infecto', nombre:'Meningitis y encefalitis', dif:4, prio:'A', deps:['infecto_fisio','neuro_fisio'], unlock:[] },
+  { id:'infecto_inmunocomp', spec:'infecto', nombre:'Infecciones en el huésped inmunocomprometido', dif:4, prio:'B', deps:['infecto_fisio'], unlock:[] },
+  { id:'infecto_vih', spec:'infecto', nombre:'VIH: fisiopatología, estadificación y TARV', dif:4, prio:'B', deps:['infecto_fisio'], unlock:[] },
 
   // NEUROLOGÍA
-  { id:'ne01', spec:'neuro', nombre:'Fisiología Neurológica Base', dif:3, prio:'A', deps:['i_farma'], unlock:['ne02','ne03','i06'] },
-  { id:'ne02', spec:'neuro', nombre:'Ictus isquémico y hemorrágico', dif:5, prio:'A', deps:['ne01','c01'], unlock:[] },
-  { id:'ne03', spec:'neuro', nombre:'Crisis epilépticas y status epilepticus', dif:4, prio:'A', deps:['ne01'], unlock:[] },
-  { id:'ne04', spec:'neuro', nombre:'Encefalopatía metabólica y toxic-metabólica', dif:4, prio:'A', deps:['ne01','nf06','e01'], unlock:[] },
-  { id:'ne05', spec:'neuro', nombre:'Neuropatías periféricas: polineuropatía y mononeuropatía', dif:3, prio:'B', deps:['ne01'], unlock:[] },
-  { id:'ne06', spec:'neuro', nombre:'Enfermedades neuromusculares: Guillain-Barré y MG', dif:4, prio:'B', deps:['ne01'], unlock:[] },
+  { id:'neuro_fisio', spec:'neuro', nombre:'Fisiología Neurológica Base', dif:3, prio:'A', deps:[], unlock:[] },
+  { id:'neuro_ecv', spec:'neuro', nombre:'Ictus isquémico y hemorrágico', dif:5, prio:'A', deps:['neuro_fisio','cardio_fisio'], unlock:[] },
+  { id:'neuro_convulsivo', spec:'neuro', nombre:'Crisis epilépticas y status epilepticus', dif:4, prio:'A', deps:['neuro_fisio'], unlock:[] },
+  { id:'neuro_encefalopatia', spec:'neuro', nombre:'Encefalopatía metabólica y toxic-metabólica', dif:4, prio:'A', deps:['neuro_fisio','nefro_acido_base','endo_diabetes'], unlock:[] },
+  { id:'neuro_neuropatias', spec:'neuro', nombre:'Neuropatías periféricas: polineuropatía y mononeuropatía', dif:3, prio:'B', deps:['neuro_fisio'], unlock:[] },
+  { id:'neuro_neuromuscular', spec:'neuro', nombre:'Enfermedades neuromusculares: Guillain-Barré y MG', dif:4, prio:'B', deps:['neuro_fisio'], unlock:[] },
 
   // REUMATOLOGÍA
-  { id:'reuma_fisio', spec:'reuma', nombre:'Fisiología Reumatológica e Inmunopatología', dif:2, prio:'B', deps:['i_farma'], unlock:['r01','r02','r03','r04'] },
-  { id:'r01', spec:'reuma', nombre:'Lupus eritematoso sistémico', dif:4, prio:'A', deps:['reuma_fisio'], unlock:[] },
-  { id:'r02', spec:'reuma', nombre:'Artritis reumatoide y artritis reactiva', dif:3, prio:'B', deps:['reuma_fisio'], unlock:[] },
-  { id:'r03', spec:'reuma', nombre:'Vasculitis sistémicas', dif:4, prio:'B', deps:['reuma_fisio'], unlock:[] },
-  { id:'r04', spec:'reuma', nombre:'Gota e hiperuricemia', dif:3, prio:'B', deps:['reuma_fisio'], unlock:[] },
+  { id:'reuma_fisio', spec:'reuma', nombre:'Fisiología Reumatológica e Inmunopatología', dif:2, prio:'B', deps:[], unlock:[] },
+  { id:'reuma_les', spec:'reuma', nombre:'Lupus eritematoso sistémico', dif:4, prio:'A', deps:['reuma_fisio'], unlock:[] },
+  { id:'reuma_ar', spec:'reuma', nombre:'Artritis reumatoide y artritis reactiva', dif:3, prio:'B', deps:['reuma_fisio'], unlock:[] },
+  { id:'reuma_vasculitis', spec:'reuma', nombre:'Vasculitis sistémicas', dif:4, prio:'B', deps:['reuma_fisio'], unlock:[] },
+  { id:'reuma_gota', spec:'reuma', nombre:'Gota e hiperuricemia', dif:3, prio:'B', deps:['reuma_fisio'], unlock:[] },
 
   // FARMACOLOGÍA CLÍNICA
-  { id:'f01', spec:'farm', nombre:'Farmacocinética y farmacodinámica clínica', dif:3, prio:'A', deps:['i_farma'], unlock:['f02','f03','f04','f05'] },
-  { id:'f02', spec:'farm', nombre:'Fármacos cardiovasculares: β-bloqueadores, IECA, diuréticos', dif:4, prio:'A', deps:['f01','c01','nf08'], unlock:[] },
-  { id:'f03', spec:'farm', nombre:'Anticoagulantes y antiagregantes plaquetarios', dif:4, prio:'A', deps:['f01','h01'], unlock:[] },
-  { id:'f04', spec:'farm', nombre:'Corticoides: efectos, usos y complicaciones', dif:3, prio:'A', deps:['f01'], unlock:[] },
-  { id:'f05', spec:'farm', nombre:'Analgesia, sedación y manejo del dolor', dif:3, prio:'B', deps:['f01'], unlock:[] },
+  { id:'farm_fisio', spec:'farm', nombre:'Farmacocinética y farmacodinámica clínica', dif:3, prio:'A', deps:[], unlock:[] },
+  { id:'farm_cv', spec:'farm', nombre:'Fármacos cardiovasculares: β-bloqueadores, IECA, diuréticos', dif:4, prio:'A', deps:['farm_fisio','cardio_fisio','nefro_raas'], unlock:[] },
+  { id:'farm_anticoag', spec:'farm', nombre:'Anticoagulantes y antiagregantes plaquetarios', dif:4, prio:'A', deps:['farm_fisio','hema_fisio'], unlock:[] },
+  { id:'farm_corticoides', spec:'farm', nombre:'Corticoides: efectos, usos y complicaciones', dif:3, prio:'A', deps:['farm_fisio'], unlock:[] },
+  { id:'farm_analgesia', spec:'farm', nombre:'Analgesia, sedación y manejo del dolor', dif:3, prio:'B', deps:['farm_fisio'], unlock:[] },
 
   // MEDICINA CRÍTICA
-  { id:'crit_fisio', spec:'crit', nombre:'Fisiología Básica para Medicina Crítica', dif:3, prio:'A', deps:['i_farma'], unlock:['crit_sepsis','crit_cardiogenico','crit_hipovolemico','crit_neumonia_grave','crit_multiorganica','crit_tec'] },
+  { id:'crit_fisio', spec:'crit', nombre:'Fisiología Básica para Medicina Crítica', dif:3, prio:'A', deps:[], unlock:[] },
   { id:'crit_sepsis', spec:'crit', nombre:'Choque Séptico', dif:5, prio:'A', deps:['crit_fisio'], unlock:[] },
   { id:'crit_cardiogenico', spec:'crit', nombre:'Choque Cardiogénico', dif:5, prio:'A', deps:['crit_fisio'], unlock:[] },
   { id:'crit_hipovolemico', spec:'crit', nombre:'Choque Hipovolémico', dif:4, prio:'A', deps:['crit_fisio'], unlock:[] },
@@ -968,24 +1039,19 @@ const TEMAS = [
 ];
 
 const TEMAS_INTERNA = [
-  // BLOQUE 0: INTRODUCCIÓN Y FISIOLOGÍA CORE
-  { id:'i_fisio', spec:'intro', nombre:'Principios de Fisiopatología y Homeostasis', dif:2, prio:'A', deps:[], unlock:['i_medio','i_farma'] },
-  { id:'i_medio', spec:'intro', nombre:'Medio Interno, Electrólitos y Equilibrio Ácido-Base', dif:3, prio:'A', deps:['i_fisio'], unlock:['i_farma'] },
-  { id:'i_farma', spec:'intro', nombre:'Farmacoterapia y Medicamentos de Uso Frecuente en Medicina Interna', dif:3, prio:'A', deps:['i_medio'], unlock:['card_fisio','reuma_fisio','neumo_fisio','hema_fisio','endo_fisio','crit_fisio','nefro_fisio','neuro_fisio','gastro_fisio'] },
-
   // BLOQUE 1: CARDIOLOGÍA
-  { id:'card_fisio', spec:'cardio', nombre:'Fisiología Cardíaca y Mecanismos de Falla', dif:2, prio:'A', deps:['i_farma'], unlock:['card_icc','card_chagas','card_reumatica','card_hta','card_valvulo','card_arritmias','card_endocarditis','card_coronario'] },
-  { id:'card_icc', spec:'cardio', nombre:'Insuficiencia Cardíaca Congestiva', dif:4, prio:'A', deps:['card_fisio'], unlock:[] },
-  { id:'card_chagas', spec:'cardio', nombre:'Enfermedad de Chagas', dif:3, prio:'B', deps:['card_fisio'], unlock:[] },
-  { id:'card_reumatica', spec:'cardio', nombre:'Fiebre Reumática', dif:3, prio:'B', deps:['card_fisio'], unlock:[] },
-  { id:'card_hta', spec:'cardio', nombre:'HTA (Hipertensión Arterial)', dif:3, prio:'A', deps:['card_fisio'], unlock:[] },
-  { id:'card_valvulo', spec:'cardio', nombre:'Valvulopatías', dif:4, prio:'B', deps:['card_fisio'], unlock:[] },
-  { id:'card_arritmias', spec:'cardio', nombre:'Arritmias Cardiacas', dif:4, prio:'A', deps:['card_fisio'], unlock:[] },
-  { id:'card_endocarditis', spec:'cardio', nombre:'Endocarditis Bacteriana', dif:4, prio:'A', deps:['card_fisio'], unlock:[] },
-  { id:'card_coronario', spec:'cardio', nombre:'Sd. Coronario + Valores Normales de Laboratorio', dif:5, prio:'A', deps:['card_fisio'], unlock:[] },
+  { id:'cardio_fisio', spec:'cardio', nombre:'Fisiología Cardíaca y Mecanismos de Falla', dif:2, prio:'A', deps:[], unlock:[] },
+  { id:'cardio_icc', spec:'cardio', nombre:'Insuficiencia Cardíaca Congestiva', dif:4, prio:'A', deps:['cardio_fisio'], unlock:[] },
+  { id:'cardio_chagas', spec:'cardio', nombre:'Enfermedad de Chagas', dif:3, prio:'B', deps:['cardio_fisio'], unlock:[] },
+  { id:'cardio_reumatica', spec:'cardio', nombre:'Fiebre Reumática', dif:3, prio:'B', deps:['cardio_fisio'], unlock:[] },
+  { id:'cardio_hta', spec:'cardio', nombre:'HTA (Hipertensión Arterial)', dif:3, prio:'A', deps:['cardio_fisio'], unlock:[] },
+  { id:'cardio_valvulo', spec:'cardio', nombre:'Valvulopatías', dif:4, prio:'B', deps:['cardio_fisio'], unlock:[] },
+  { id:'cardio_arritmias', spec:'cardio', nombre:'Arritmias Cardiacas', dif:4, prio:'A', deps:['cardio_fisio'], unlock:[] },
+  { id:'cardio_endocarditis', spec:'cardio', nombre:'Endocarditis Bacteriana', dif:4, prio:'A', deps:['cardio_fisio'], unlock:[] },
+  { id:'cardio_coronario', spec:'cardio', nombre:'Sd. Coronario + Valores Normales de Laboratorio', dif:5, prio:'A', deps:['cardio_fisio'], unlock:[] },
 
   // BLOQUE 2: REUMATOLOGÍA
-  { id:'reuma_fisio', spec:'reuma', nombre:'Fisiología Reumatológica e Inmunopatología', dif:2, prio:'B', deps:['i_farma'], unlock:['reuma_ar','reuma_artrosis','reuma_vasculitis','reuma_les','reuma_gota','reuma_seudogota'] },
+  { id:'reuma_fisio', spec:'reuma', nombre:'Fisiología Reumatológica e Inmunopatología', dif:2, prio:'B', deps:[], unlock:[] },
   { id:'reuma_ar', spec:'reuma', nombre:'Artritis Reumatoidea', dif:4, prio:'A', deps:['reuma_fisio'], unlock:[] },
   { id:'reuma_artrosis', spec:'reuma', nombre:'Artrosis', dif:3, prio:'B', deps:['reuma_fisio'], unlock:[] },
   { id:'reuma_vasculitis', spec:'reuma', nombre:'Vasculitis', dif:4, prio:'B', deps:['reuma_fisio'], unlock:[] },
@@ -994,23 +1060,23 @@ const TEMAS_INTERNA = [
   { id:'reuma_seudogota', spec:'reuma', nombre:'Seudogota', dif:3, prio:'B', deps:['reuma_fisio'], unlock:[] },
 
   // BLOQUE 3: NEUMOLOGÍA
-  { id:'neumo_fisio', spec:'neumo', nombre:'Fisiología Respiratoria y Control Ventilatorio', dif:2, prio:'A', deps:['i_farma'], unlock:['neumo_tep','neumo_asma','neumo_tb','neumo_pleura','neumo_epoc','neumo_neumonias'] },
-  { id:'neumo_tep', spec:'neumo', nombre:'Tromboembolismo Pulmonar', dif:4, prio:'A', deps:['neumo_fisio'], unlock:[] },
+  { id:'neumo_fisio', spec:'neumo', nombre:'Fisiología Respiratoria y Control Ventilatorio', dif:2, prio:'A', deps:[], unlock:[] },
+  { id:'cardio_tep', spec:'neumo', nombre:'Tromboembolismo Pulmonar', dif:4, prio:'A', deps:['neumo_fisio'], unlock:[] },
   { id:'neumo_asma', spec:'neumo', nombre:'Asma', dif:3, prio:'A', deps:['neumo_fisio'], unlock:[] },
   { id:'neumo_tb', spec:'neumo', nombre:'Tuberculosis', dif:3, prio:'B', deps:['neumo_fisio'], unlock:[] },
   { id:'neumo_pleura', spec:'neumo', nombre:'Enf. de la Pleura', dif:3, prio:'B', deps:['neumo_fisio'], unlock:[] },
   { id:'neumo_epoc', spec:'neumo', nombre:'Enf. Pulmonar Obstructiva Crónica (EPOC)', dif:4, prio:'A', deps:['neumo_fisio'], unlock:[] },
-  { id:'neumo_neumonias', spec:'neumo', nombre:'Neumonías', dif:3, prio:'A', deps:['neumo_fisio'], unlock:[] },
+  { id:'neumo_neumonia', spec:'neumo', nombre:'Neumonías', dif:3, prio:'A', deps:['neumo_fisio'], unlock:[] },
 
   // BLOQUE 4: HEMATOLOGÍA
-  { id:'hema_fisio', spec:'hemato', nombre:'Fisiología Hematológica y Hemostasia', dif:2, prio:'B', deps:['i_farma'], unlock:['hema_anemias','hema_trombocitopenias','hema_leucemias','hema_vih'] },
+  { id:'hema_fisio', spec:'hemato', nombre:'Fisiología Hematológica y Hemostasia', dif:2, prio:'B', deps:[], unlock:[] },
   { id:'hema_anemias', spec:'hemato', nombre:'Anemias', dif:3, prio:'A', deps:['hema_fisio'], unlock:[] },
   { id:'hema_trombocitopenias', spec:'hemato', nombre:'Trombocitopenias', dif:4, prio:'A', deps:['hema_fisio'], unlock:[] },
   { id:'hema_leucemias', spec:'hemato', nombre:'Leucemias', dif:4, prio:'B', deps:['hema_fisio'], unlock:[] },
-  { id:'hema_vih', spec:'hemato', nombre:'Infectología VIH - SIDA', dif:4, prio:'A', deps:['hema_fisio'], unlock:[] },
+  { id:'infecto_vih', spec:'hemato', nombre:'Infectología VIH - SIDA', dif:4, prio:'A', deps:['hema_fisio'], unlock:[] },
 
   // BLOQUE 5: ENDOCRINOLOGÍA
-  { id:'endo_fisio', spec:'endo', nombre:'Fisiología Endocrinológica y Ejes Hormonales', dif:2, prio:'A', deps:['i_farma'], unlock:['endo_diabetes','endo_cetoacidosis','endo_hipoglucemias','endo_hipotalamo','endo_tiroides'] },
+  { id:'endo_fisio', spec:'endo', nombre:'Fisiología Endocrinológica y Ejes Hormonales', dif:2, prio:'A', deps:[], unlock:[] },
   { id:'endo_diabetes', spec:'endo', nombre:'Diabetes Mellitus Tipo 1 y 2', dif:3, prio:'A', deps:['endo_fisio'], unlock:[] },
   { id:'endo_cetoacidosis', spec:'endo', nombre:'Cetoacidosis Diabética y Estado Hiperosmolar', dif:5, prio:'A', deps:['endo_fisio'], unlock:[] },
   { id:'endo_hipoglucemias', spec:'endo', nombre:'Hipoglucemias', dif:3, prio:'A', deps:['endo_fisio'], unlock:[] },
@@ -1018,7 +1084,7 @@ const TEMAS_INTERNA = [
   { id:'endo_tiroides', spec:'endo', nombre:'Enf. Tiroides', dif:3, prio:'A', deps:['endo_fisio'], unlock:[] },
 
   // BLOQUE 6: MEDICINA CRÍTICA
-  { id:'crit_fisio', spec:'crit', nombre:'Fisiología Básica para Medicina Crítica', dif:3, prio:'A', deps:['i_farma'], unlock:['crit_sepsis','crit_cardiogenico','crit_hipovolemico','crit_neumonia_grave','crit_multiorganica','crit_tec'] },
+  { id:'crit_fisio', spec:'crit', nombre:'Fisiología Básica para Medicina Crítica', dif:3, prio:'A', deps:[], unlock:[] },
   { id:'crit_sepsis', spec:'crit', nombre:'Choque Séptico', dif:5, prio:'A', deps:['crit_fisio'], unlock:[] },
   { id:'crit_cardiogenico', spec:'crit', nombre:'Choque Cardiogénico', dif:5, prio:'A', deps:['crit_fisio'], unlock:[] },
   { id:'crit_hipovolemico', spec:'crit', nombre:'Choque Hipovolémico', dif:4, prio:'A', deps:['crit_fisio'], unlock:[] },
@@ -1027,7 +1093,7 @@ const TEMAS_INTERNA = [
   { id:'crit_tec', spec:'crit', nombre:'Traumatismo Encéfalo Craneal (TEC)', dif:4, prio:'B', deps:['crit_fisio'], unlock:[] },
 
   // BLOQUE 7: NEFROLOGÍA
-  { id:'nefro_fisio', spec:'nefro', nombre:'Fisiología Renal y Regulación del Volumen', dif:2, prio:'A', deps:['i_farma'], unlock:['nefro_ira','nefro_erc','nefro_glomerulonefritis','nefro_nefrotico','nefro_nefritico'] },
+  { id:'nefro_fisio', spec:'nefro', nombre:'Fisiología Renal y Regulación del Volumen', dif:2, prio:'A', deps:[], unlock:[] },
   { id:'nefro_ira', spec:'nefro', nombre:'Injuria Renal Aguda', dif:4, prio:'A', deps:['nefro_fisio'], unlock:[] },
   { id:'nefro_erc', spec:'nefro', nombre:'Enfermedad Renal Crónica', dif:4, prio:'A', deps:['nefro_fisio'], unlock:[] },
   { id:'nefro_glomerulonefritis', spec:'nefro', nombre:'Glomerulonefritis', dif:4, prio:'B', deps:['nefro_fisio'], unlock:[] },
@@ -1035,14 +1101,14 @@ const TEMAS_INTERNA = [
   { id:'nefro_nefritico', spec:'nefro', nombre:'Síndrome Nefrítico', dif:4, prio:'A', deps:['nefro_fisio'], unlock:[] },
 
   // BLOQUE 8: NEUROLOGÍA
-  { id:'neuro_fisio', spec:'neuro', nombre:'Fisiología Neurológica Base', dif:2, prio:'A', deps:['i_farma'], unlock:['neuro_ecv','neuro_convulsivo','neuro_meningitis','neuro_cefalea'] },
+  { id:'neuro_fisio', spec:'neuro', nombre:'Fisiología Neurológica Base', dif:2, prio:'A', deps:[], unlock:[] },
   { id:'neuro_ecv', spec:'neuro', nombre:'Enfermedad Cerebrovascular', dif:5, prio:'A', deps:['neuro_fisio'], unlock:[] },
   { id:'neuro_convulsivo', spec:'neuro', nombre:'Síndrome Convulsivo', dif:4, prio:'A', deps:['neuro_fisio'], unlock:[] },
-  { id:'neuro_meningitis', spec:'neuro', nombre:'Meningitis', dif:4, prio:'A', deps:['neuro_fisio'], unlock:[] },
+  { id:'infecto_meningitis', spec:'neuro', nombre:'Meningitis', dif:4, prio:'A', deps:['neuro_fisio'], unlock:[] },
   { id:'neuro_cefalea', spec:'neuro', nombre:'Cefalea', dif:3, prio:'B', deps:['neuro_fisio'], unlock:[] },
 
   // BLOQUE 9: GASTROENTEROLOGÍA
-  { id:'gastro_fisio', spec:'gastro', nombre:'Fisiología Gastroenterológica y Regulación Digestiva', dif:2, prio:'A', deps:['i_farma'], unlock:['gastro_cirrosis','gastro_hemorragia','gastro_acido_peptica','gastro_pancreatitis','gastro_hepatitis','gastro_diarreas'] },
+  { id:'gastro_fisio', spec:'gastro', nombre:'Fisiología Gastroenterológica y Regulación Digestiva', dif:2, prio:'A', deps:[], unlock:[] },
   { id:'gastro_cirrosis', spec:'gastro', nombre:'Hepatopatía Alcohólica, Cirrosis Hepática y sus Complicaciones', dif:5, prio:'A', deps:['gastro_fisio'], unlock:[] },
   { id:'gastro_hemorragia', spec:'gastro', nombre:'Hemorragia Digestiva Alta y Baja', dif:3, prio:'A', deps:['gastro_fisio'], unlock:[] },
   { id:'gastro_acido_peptica', spec:'gastro', nombre:'Enf. Ácido Péptica / Úlcera Péptica', dif:3, prio:'A', deps:['gastro_fisio'], unlock:[] },
@@ -1057,7 +1123,7 @@ const TEMAS_INTERNA = [
 
 const DEFAULT_STATE = {
   dia: 1,
-  completados: [],       // tema IDs completados
+  completedTopics: [],   // tema IDs completados
   estados: {},           // id -> 'no_iniciado'|'en_progreso'|'dominado'
   medicSteps: {},        // temaId -> { paso: bool }
   notas: {},             // temaId -> texto de notas personales
@@ -1072,6 +1138,8 @@ const DEFAULT_STATE = {
 };
 
 let STATE = JSON.parse(localStorage.getItem('medos4_state') || 'null') || JSON.parse(JSON.stringify(DEFAULT_STATE));
+migrateStateIds(STATE);
+if (!STATE.completedTopics) STATE.completedTopics = [];
 
 // Lógica de Auto-absorción de datos desde URL (?data=)
 const urlParams = new URLSearchParams(window.location.search);
@@ -1079,8 +1147,10 @@ if (urlParams.has('data')) {
   try {
     const decoded = decodeURIComponent(escape(atob(urlParams.get('data'))));
     const parsed = JSON.parse(decoded);
-    if (parsed && typeof parsed === 'object' && parsed.completados) {
+    if (parsed && typeof parsed === 'object' && (parsed.completados || parsed.completedTopics)) {
       STATE = parsed;
+      migrateStateIds(STATE);
+      if (!STATE.completedTopics) STATE.completedTopics = [];
       localStorage.setItem('medos4_state', JSON.stringify(STATE));
       window.history.replaceState({}, document.title, window.location.pathname);
       window.addEventListener('DOMContentLoaded', () => {
@@ -1149,20 +1219,28 @@ function getAllTemasRaw() {
 
 // Devuelve solo los temas activos, con overrides aplicados (nombre/dif/prio/tiempo/módulo)
 function getAllTemas() {
-  return getAllTemasRaw()
+  const temas = getAllTemasRaw()
     .map(t => {
       const o = STATE.temaOverrides[t.id];
       return o ? { ...t, ...o } : t;
     })
     .filter(t => t.activo !== false);
+  temas.forEach(t => {
+    t.unlock = temas.filter(x => (x.deps || []).includes(t.id)).map(x => x.id);
+  });
+  return temas;
 }
 
 // Para pantallas de configuración necesitamos ver TODOS los temas, activos o no
 function getAllTemasConInactivos() {
-  return getAllTemasRaw().map(t => {
+  const temas = getAllTemasRaw().map(t => {
     const o = STATE.temaOverrides[t.id];
     return o ? { ...t, ...o } : t;
   });
+  temas.forEach(t => {
+    t.unlock = temas.filter(x => (x.deps || []).includes(t.id)).map(x => x.id);
+  });
+  return temas;
 }
 
 function getTiempoEstimado(t) {
@@ -1179,12 +1257,12 @@ function isCustomTema(id) { return (STATE.customTemas || []).some(t => t.id === 
 
 function calcularPlan() {
   const temas = getAllTemas();
-  const completados = new Set(STATE.completados || []);
+  const completedSet = new Set(STATE.completedTopics || []);
   const ordered = [];
   const visited = new Set();
 
   function canStudy(t) {
-    return (t.deps || []).every(d => completados.has(d) || visited.has(d) || !temas.find(x=>x.id===d));
+    return (t.deps || []).every(d => completedSet.has(d) || visited.has(d) || !temas.find(x=>x.id===d));
   }
 
   let iterations = 0;
@@ -1635,7 +1713,7 @@ function abrirSesion() {
 // Reorganiza el plan reconociendo cuántos temas realmente se completaron,
 // para que "Día X" siempre refleje la realidad si algún día no se estudió (o se adelantó).
 function replanificarSemana() {
-  const completadosReales = (STATE.completados || []).length;
+  const completadosReales = (STATE.completedTopics || []).length;
   const diaAnterior = STATE.dia;
   
   // Ajustar startDate para que hoy corresponda al día (completadosReales + 1)
@@ -1901,7 +1979,7 @@ function toggleNoEntendi() {
 
 function marcarDominado(temaId) {
   STATE.estados[temaId] = 'dominado';
-  if (!STATE.completados.includes(temaId)) STATE.completados.push(temaId);
+  if (!STATE.completedTopics.includes(temaId)) STATE.completedTopics.push(temaId);
   const hoy = new Date().toISOString().split('T')[0];
   STATE.heatmap[hoy] = (STATE.heatmap[hoy] || 0) + 1;
   STATE.dia = getDiaActual();
@@ -2143,7 +2221,7 @@ function calcRacha() {
 
 function calcHorasEstudiadas() {
   const temas = getAllTemasConInactivos();
-  const minutos = (STATE.completados || []).reduce((sum, id) => {
+  const minutos = (STATE.completedTopics || []).reduce((sum, id) => {
     const t = temas.find(x => x.id === id);
     return sum + (t ? getTiempoEstimado(t) : 0);
   }, 0);
@@ -2166,8 +2244,8 @@ function calcEspecialidadesFuerteDebil() {
 }
 
 function isTejedorDeRedes() {
-  const plan = getAllTemasRaw();
-  return (STATE.completados || []).some(id => {
+  const plan = getAllTemasConInactivos();
+  return (STATE.completedTopics || []).some(id => {
     const tema = plan.find(t => t.id === id);
     if (!tema) return false;
     const unlockCount = (tema.unlock || []).filter(uId => plan.some(x => x.id === uId)).length;
@@ -2267,7 +2345,7 @@ function renderProgreso() {
   // Logros (Medallas)
   const medals = [
     { id: 'primer_resp', icon: '🎖️', name: 'Primer Respondedor', desc: '1 tema dom.' },
-    { id: 'mecanismo_dominado', icon: '🧠', name: 'Mecanismo Dominado', desc: 'Fisiología Core' },
+    { id: 'mecanismo_dominado', icon: '🧠', name: 'Mecanismo Dominado', desc: '3 temas de Fisiología' },
     { id: 'fuego_implacable', icon: '🔥', name: 'Fuego Implacable', desc: 'Racha 7 días' },
     { id: 'estudio_rapido', icon: '⚡', name: 'Estudio Rápido', desc: 'Avance hoy' },
     { id: 'maestro_bloque', icon: '👑', name: 'Maestro de Bloque', desc: '100% especialidad' },
@@ -2290,8 +2368,12 @@ function renderProgreso() {
 
   // Evaluar estados
   const medalsUnlocked = {
-    primer_resp: STATE.completados.length >= 1,
-    mecanismo_dominado: STATE.completados.includes('i_fisio') && STATE.completados.includes('i_medio') && STATE.completados.includes('i_farma'),
+    primer_resp: (STATE.completedTopics || []).length >= 1,
+    mecanismo_dominado: (() => {
+      const activeTemas = getAllTemas();
+      const fisioTopics = activeTemas.filter(t => t.id.endsWith('_fisio') || t.id.startsWith('fisio_') || t.id.includes('fisio'));
+      return fisioTopics.length > 0 && fisioTopics.filter(t => (STATE.completedTopics || []).includes(t.id)).length >= 3;
+    })(),
     fuego_implacable: racha >= 7,
     estudio_rapido: !!window._hasStudiedThisSession || (STATE.heatmap[hoy] || 0) > 0,
     maestro_bloque: isMaestroDeBloque(),
@@ -2378,7 +2460,7 @@ function renderProgreso() {
       <button class="btn btn-primary" onclick="exportarProgreso()" style="font-size:13px; padding: 12px;">
         🔗 Generar Enlace Portátil
       </button>
-      <button class="btn btn-secondary" style="font-size:13px; padding: 12px;" onclick="if(confirm('¿Reiniciar TODO el progreso? Esto no borra tu temario personalizado.')){STATE.startDate=null;STATE.dia=1;STATE.completados=[];STATE.estados={};STATE.medicSteps={};STATE.notas={};STATE.heatmap={};STATE.activeTema=null;saveState();goTo('inicio');}">
+      <button class="btn btn-secondary" style="font-size:13px; padding: 12px;" onclick="if(confirm('¿Reiniciar TODO el progreso? Esto no borra tu temario personalizado.')){STATE.startDate=null;STATE.dia=1;STATE.completedTopics=[];STATE.estados={};STATE.medicSteps={};STATE.notas={};STATE.heatmap={};STATE.activeTema=null;saveState();goTo('inicio');}">
         Reiniciar progreso del plan
       </button>
     </div>
