@@ -1,80 +1,3 @@
-const ID_MIGRATION_MAP = {
-  // Completo
-  'c01': 'cardio_fisio', 'c02': 'cardio_icc', 'c03': 'cardio_coronario', 'c04': 'cardio_arritmias',
-  'c05': 'cardio_hta', 'c06': 'cardio_valvulo', 'c07': 'cardio_pericarditis', 'c08': 'cardio_miocardio',
-  'c09': 'cardio_tep', 'c10': 'cardio_shock',
-  'n01': 'neumo_fisio', 'n02': 'neumo_epoc', 'n03': 'neumo_asma', 'n04': 'neumo_neumonia',
-  'n05': 'neumo_sdra', 'n06': 'neumo_pleura', 'n07': 'neumo_ht_pulm', 'n08': 'neumo_ir',
-  'nf01': 'nefro_fisio', 'nf02': 'nefro_ira', 'nf03': 'nefro_erc', 'nf04': 'nefro_sodio',
-  'nf05': 'nefro_potasio', 'nf06': 'nefro_acido_base', 'nf07': 'nefro_glomerulo', 'nf08': 'nefro_raas',
-  'g01': 'gastro_hemorragia', 'g02': 'gastro_hepatitis', 'g03': 'gastro_cirrosis', 'g04': 'gastro_portal',
-  'g05': 'gastro_pancreatitis', 'g06': 'gastro_eii', 'g07': 'gastro_ileo',
-  'e01': 'endo_diabetes', 'e02': 'endo_cetoacidosis', 'e03': 'endo_hipoglucemias', 'e04': 'endo_tiroides',
-  'e05': 'endo_crisis_tiro', 'e06': 'endo_crisis_adrenal', 'e07': 'endo_cushing', 'e08': 'endo_calcio',
-  'h01': 'hema_fisio', 'h02': 'hema_anemias', 'h03': 'hema_trombocitopenias', 'h04': 'hema_cid',
-  'h05': 'hema_leucemias',
-  'i01': 'infecto_fisio', 'i02': 'crit_sepsis', 'i03': 'infecto_antibioticos', 'i04': 'infecto_itu',
-  'i05': 'cardio_endocarditis', 'i06': 'infecto_meningitis', 'i07': 'infecto_inmunocomp', 'i08': 'infecto_vih',
-  'ne01': 'neuro_fisio', 'ne02': 'neuro_ecv', 'ne03': 'neuro_convulsivo', 'ne04': 'neuro_encefalopatia',
-  'ne05': 'neuro_neuropatias', 'ne06': 'neuro_neuromuscular',
-  'r01': 'reuma_les', 'r02': 'reuma_ar', 'r03': 'reuma_vasculitis', 'r04': 'reuma_gota',
-  'f01': 'farm_fisio', 'f02': 'farm_cv', 'f03': 'farm_anticoag', 'f04': 'farm_corticoides', 'f05': 'farm_analgesia',
-  
-  // Resumido
-  'card_fisio': 'cardio_fisio', 'card_icc': 'cardio_icc', 'card_chagas': 'cardio_chagas',
-  'card_reumatica': 'cardio_reumatica', 'card_hta': 'cardio_hta', 'card_valvulo': 'cardio_valvulo',
-  'card_arritmias': 'cardio_arritmias', 'card_endocarditis': 'cardio_endocarditis', 'card_coronario': 'cardio_coronario',
-  'neumo_tep': 'cardio_tep', 'neumo_neumonias': 'neumo_neumonia', 'hema_vih': 'infecto_vih',
-  'neuro_meningitis': 'infecto_meningitis'
-};
-
-function migrateStateIds(state) {
-  if (!state || typeof state !== 'object') return;
-  if (state.completados && (!state.completedTopics || state.completedTopics.length === 0)) {
-    state.completedTopics = state.completados;
-  }
-  if (state.completedTopics) {
-    state.completedTopics = state.completedTopics.map(id => ID_MIGRATION_MAP[id] || id);
-    state.completedTopics = [...new Set(state.completedTopics)].filter(id => !['i_fisio','i_medio','i_farma'].includes(id));
-  }
-  if (state.estados) {
-    const newEstados = {};
-    for (const k in state.estados) {
-      const newKey = ID_MIGRATION_MAP[k] || k;
-      if (!['i_fisio','i_medio','i_farma'].includes(newKey)) {
-        newEstados[newKey] = state.estados[k];
-      }
-    }
-    state.estados = newEstados;
-  }
-  if (state.medicSteps) {
-    const newSteps = {};
-    for (const k in state.medicSteps) {
-      const newKey = ID_MIGRATION_MAP[k] || k;
-      if (!['i_fisio','i_medio','i_farma'].includes(newKey)) {
-        newSteps[newKey] = state.medicSteps[k];
-      }
-    }
-    state.medicSteps = newSteps;
-  }
-  if (state.notas) {
-    const newNotas = {};
-    for (const k in state.notas) {
-      const newKey = ID_MIGRATION_MAP[k] || k;
-      if (!['i_fisio','i_medio','i_farma'].includes(newKey)) {
-        newNotas[newKey] = state.notas[k];
-      }
-    }
-    state.notas = newNotas;
-  }
-  if (state.activeTema) {
-    state.activeTema = ID_MIGRATION_MAP[state.activeTema] || state.activeTema;
-    if (['i_fisio','i_medio','i_farma'].includes(state.activeTema)) {
-      state.activeTema = null;
-    }
-  }
-}
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -916,6 +839,83 @@ input, textarea, select { font-family: inherit; }
 </div>
 
 <script>
+const ID_MIGRATION_MAP = {
+  // Completo
+  'c01': 'cardio_fisio', 'c02': 'cardio_icc', 'c03': 'cardio_coronario', 'c04': 'cardio_arritmias',
+  'c05': 'cardio_hta', 'c06': 'cardio_valvulo', 'c07': 'cardio_pericarditis', 'c08': 'cardio_miocardio',
+  'c09': 'cardio_tep', 'c10': 'cardio_shock',
+  'n01': 'neumo_fisio', 'n02': 'neumo_epoc', 'n03': 'neumo_asma', 'n04': 'neumo_neumonia',
+  'n05': 'neumo_sdra', 'n06': 'neumo_pleura', 'n07': 'neumo_ht_pulm', 'n08': 'neumo_ir',
+  'nf01': 'nefro_fisio', 'nf02': 'nefro_ira', 'nf03': 'nefro_erc', 'nf04': 'nefro_sodio',
+  'nf05': 'nefro_potasio', 'nf06': 'nefro_acido_base', 'nf07': 'nefro_glomerulo', 'nf08': 'nefro_raas',
+  'g01': 'gastro_hemorragia', 'g02': 'gastro_hepatitis', 'g03': 'gastro_cirrosis', 'g04': 'gastro_portal',
+  'g05': 'gastro_pancreatitis', 'g06': 'gastro_eii', 'g07': 'gastro_ileo',
+  'e01': 'endo_diabetes', 'e02': 'endo_cetoacidosis', 'e03': 'endo_hipoglucemias', 'e04': 'endo_tiroides',
+  'e05': 'endo_crisis_tiro', 'e06': 'endo_crisis_adrenal', 'e07': 'endo_cushing', 'e08': 'endo_calcio',
+  'h01': 'hema_fisio', 'h02': 'hema_anemias', 'h03': 'hema_trombocitopenias', 'h04': 'hema_cid',
+  'h05': 'hema_leucemias',
+  'i01': 'infecto_fisio', 'i02': 'crit_sepsis', 'i03': 'infecto_antibioticos', 'i04': 'infecto_itu',
+  'i05': 'cardio_endocarditis', 'i06': 'infecto_meningitis', 'i07': 'infecto_inmunocomp', 'i08': 'infecto_vih',
+  'ne01': 'neuro_fisio', 'ne02': 'neuro_ecv', 'ne03': 'neuro_convulsivo', 'ne04': 'neuro_encefalopatia',
+  'ne05': 'neuro_neuropatias', 'ne06': 'neuro_neuromuscular',
+  'r01': 'reuma_les', 'r02': 'reuma_ar', 'r03': 'reuma_vasculitis', 'r04': 'reuma_gota',
+  'f01': 'farm_fisio', 'f02': 'farm_cv', 'f03': 'farm_anticoag', 'f04': 'farm_corticoides', 'f05': 'farm_analgesia',
+  
+  // Resumido
+  'card_fisio': 'cardio_fisio', 'card_icc': 'cardio_icc', 'card_chagas': 'cardio_chagas',
+  'card_reumatica': 'cardio_reumatica', 'card_hta': 'cardio_hta', 'card_valvulo': 'cardio_valvulo',
+  'card_arritmias': 'cardio_arritmias', 'card_endocarditis': 'cardio_endocarditis', 'card_coronario': 'cardio_coronario',
+  'neumo_tep': 'cardio_tep', 'neumo_neumonias': 'neumo_neumonia', 'hema_vih': 'infecto_vih',
+  'neuro_meningitis': 'infecto_meningitis'
+};
+
+function migrateStateIds(state) {
+  if (!state || typeof state !== 'object') return;
+  if (state.completados && (!state.completedTopics || state.completedTopics.length === 0)) {
+    state.completedTopics = state.completados;
+  }
+  if (state.completedTopics) {
+    state.completedTopics = state.completedTopics.map(id => ID_MIGRATION_MAP[id] || id);
+    state.completedTopics = [...new Set(state.completedTopics)].filter(id => !['i_fisio','i_medio','i_farma'].includes(id));
+  }
+  if (state.estados) {
+    const newEstados = {};
+    for (const k in state.estados) {
+      const newKey = ID_MIGRATION_MAP[k] || k;
+      if (!['i_fisio','i_medio','i_farma'].includes(newKey)) {
+        newEstados[newKey] = state.estados[k];
+      }
+    }
+    state.estados = newEstados;
+  }
+  if (state.medicSteps) {
+    const newSteps = {};
+    for (const k in state.medicSteps) {
+      const newKey = ID_MIGRATION_MAP[k] || k;
+      if (!['i_fisio','i_medio','i_farma'].includes(newKey)) {
+        newSteps[newKey] = state.medicSteps[k];
+      }
+    }
+    state.medicSteps = newSteps;
+  }
+  if (state.notas) {
+    const newNotas = {};
+    for (const k in state.notas) {
+      const newKey = ID_MIGRATION_MAP[k] || k;
+      if (!['i_fisio','i_medio','i_farma'].includes(newKey)) {
+        newNotas[newKey] = state.notas[k];
+      }
+    }
+    state.notas = newNotas;
+  }
+  if (state.activeTema) {
+    state.activeTema = ID_MIGRATION_MAP[state.activeTema] || state.activeTema;
+    if (['i_fisio','i_medio','i_farma'].includes(state.activeTema)) {
+      state.activeTema = null;
+    }
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // DATOS BASE — TEMARIO DE MEDICINA INTERNA
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1137,8 +1137,14 @@ const DEFAULT_STATE = {
   temarioActivo: 'completo', // 'completo' | 'interna'
 };
 
-let STATE = JSON.parse(localStorage.getItem('medos4_state') || 'null') || JSON.parse(JSON.stringify(DEFAULT_STATE));
-migrateStateIds(STATE);
+let STATE;
+try {
+  STATE = JSON.parse(localStorage.getItem('medos4_state') || 'null') || JSON.parse(JSON.stringify(DEFAULT_STATE));
+  migrateStateIds(STATE);
+} catch (e) {
+  console.error("Error migrating or loading state: ", e);
+  STATE = JSON.parse(JSON.stringify(DEFAULT_STATE));
+}
 if (!STATE.completedTopics) STATE.completedTopics = [];
 
 // Lógica de Auto-absorción de datos desde URL (?data=)
